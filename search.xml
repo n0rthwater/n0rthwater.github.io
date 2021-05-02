@@ -193,7 +193,8 @@ print(''.join([chr(i) for i in res[::-1]]))<span aria-hidden="true" class="line-
 <li><a href="https://juejin.cn/post/6844904077411745800#heading-4">Wasm介绍之4：函数调用</a></li>
 <li><a href="https://developer.mozilla.org/zh-CN/docs/WebAssembly/Understanding_the_text_format">理解WebAssembly文本格式</a></li>
 </ol>
-<h1 id="附件见github"><a href="#附件见github" class="headerlink" title="附件见github"></a>附件见github</h1>]]></content>
+<h1 id="附件"><a href="#附件" class="headerlink" title="附件"></a>附件</h1><a href="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/calc.7z" title="calc.7z">calc.7z</a>
+]]></content>
       <categories>
         <category>逆向工程</category>
       </categories>
