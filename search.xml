@@ -179,7 +179,7 @@ function check_input(){var e=document.getElementById("input_char").value;console
 <img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/moutput.png" class="">  
 
 <p>更改几次输入很容易发现规律,例如:我们的输入为”123”,则输出为:</p>
-<pre class="line-numbers language-math" data-language="math"><code class="language-math">((128*ord('1'))+ord('2'))*128+ord('3')<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>$$((128*ord(‘1’))+ord(‘2’))*128+ord(‘3’)$$</p>
 <p>解密脚本:</p>
 <pre class="line-numbers language-none"><code class="language-none">bigNum = int("0077678b0f3e6cf6e263e6fe3a4c39f3",16)
 res = []
