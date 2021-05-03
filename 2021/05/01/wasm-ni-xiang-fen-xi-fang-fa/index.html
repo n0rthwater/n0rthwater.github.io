@@ -480,6 +480,7 @@ print(''.join([chr(i) for i in res[::-1]]))<span aria-hidden="true" class="line-
 
           </div>
           
+    <div class="comments" id="gitalk-container"></div>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -646,6 +647,26 @@ print(''.join([chr(i) for i in res[::-1]]))<span aria-hidden="true" class="line-
   
 
   
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Iv1.7b2a31aae5b6a9be',
+      clientSecret: 'b6702001b881d4e9d3f1272fe0bd5e0fb55335f7',
+      repo        : 'hexo-comments',
+      owner       : 'n0rthwater',
+      admin       : ['n0rthwater'],
+      id          : '28b6068411674f57a0c5aa7a0ef6f124',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
 
 </body>
 </html>
