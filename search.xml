@@ -83,10 +83,10 @@ i64.store
 <p>即wasm中func0实际上就是JS代码中的<code>___assert_fail</code>函数</p>
 <h3 id="2-5-2-导出表"><a href="#2-5-2-导出表" class="headerlink" title="2.5.2. 导出表"></a>2.5.2. 导出表</h3><p>Example:</p>
 <pre class="line-numbers language-none"><code class="language-none">(export "f" (func 27))<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>即wasm将函数func27导出给JS调用，导出的函数名为”f”。</p>
+<p>即wasm将函数func27导出给JS调用，导出的函数名为"f"。</p>
 <h3 id="2-5-3-数据段"><a href="#2-5-3-数据段" class="headerlink" title="2.5.3. 数据段"></a>2.5.3. 数据段</h3><p>Example:</p>
 <pre class="line-numbers language-none"><code class="language-none">(data (;0;) (i32.const 1024) "0077678b0f3e6cf6e263e6fe3a4c39f3\00length is not valid\00Success\00Oops....something wrong\00n &amp;&amp; \22n is null\22\00bn.c\00bignum_from_int\00bignum_from_string\00str &amp;&amp; \22str is null\22\00nbytes &gt; 0 &amp;&amp; \22nbytes must be positive\22\00(nbytes &amp; 1) == 0 &amp;&amp; \22string format must be in hex -&gt; equal number of bytes\22\00(nbytes % (sizeof(uint32_t) * 2)) == 0 &amp;&amp; \22string length must be a multiple of (sizeof(DTYPE) * 2) characters\22\00%8x\00bignum_to_string\00%.08x\00a &amp;&amp; \22a is null\22\00bignum_add\00b &amp;&amp; \22b is null\22\00c &amp;&amp; \22c is null\22\00bignum_mul\00bignum_cmp\00dst &amp;&amp; \22dst is null\22\00bignum_assign\00src &amp;&amp; \22src is null\22\00-+   0X0x\00(null)\00\00\11\00\0a\00\11\11\11\00\00\00\00\05\00\00\00\00\00\00\09\00\00\00\00\0b\00\00\00\00\00\00\00\00\11\00\0f\0a\11\11\11\03\0a\07\00\01\00\09\0b\0b\00\00\09\06\0b\00\00\0b\00\06\11\00\00\00\11\11\11")<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>即程序内存偏移为1024的地方，存放的数据为”0077678b0f3……”</p>
+<p>即程序内存偏移为1024的地方，存放的数据为"0077678b0f3......"</p>
 <h1 id="3-静态分析"><a href="#3-静态分析" class="headerlink" title="3. 静态分析"></a>3. 静态分析</h1><h2 id="3-1-反汇编"><a href="#3-1-反汇编" class="headerlink" title="3.1. 反汇编"></a>3.1. 反汇编</h2><h3 id="3-1-1-ida自带WebAssembly插件-本人没用过"><a href="#3-1-1-ida自带WebAssembly插件-本人没用过" class="headerlink" title="3.1.1. ida自带WebAssembly插件(本人没用过)"></a>3.1.1. ida自带WebAssembly插件(本人没用过)</h3><h3 id="3-1-2-使用WABT"><a href="#3-1-2-使用WABT" class="headerlink" title="3.1.2. 使用WABT"></a>3.1.2. 使用<a href="https://github.com/WebAssembly/wabt">WABT</a></h3><pre class="line-numbers language-none"><code class="language-none">./wasm2wat test.wasm -o test.wat    //获取字节码<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <h2 id="3-2-反编译"><a href="#3-2-反编译" class="headerlink" title="3.2. 反编译"></a>3.2. 反编译</h2><h3 id="3-2-1-使用WABT"><a href="#3-2-1-使用WABT" class="headerlink" title="3.2.1. 使用WABT:"></a>3.2.1. 使用WABT:</h3><p><code>./wasm2c test.wasm -o test.c</code>     </p>
 <p>得到<code>.c</code>文件和<code>.h</code>文件。<br>这一步得到的代码可读性仍然很差，光是行数也很吓人。</p>
@@ -146,13 +146,13 @@ function check_input(){var e=document.getElementById("input_char").value;console
     if (stack !== 0) stackRestore(stack);
     return ret
 }<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>该函数首先调用getCFunc(“entry”),getCFunc定义如下：  </p>
+<p>该函数首先调用getCFunc("entry"),getCFunc定义如下：  </p>
 <pre class="line-numbers language-none"><code class="language-none">function getCFunc(ident) {
     var func = Module["_" + ident];
     assert(func, "Cannot call unknown function " + ident + ", make sure it is exported");
     return func
 }<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>其中Module[“_entry”]如下：</p>
+<p>其中Module["_entry"]如下：</p>
 <pre class="line-numbers language-none"><code class="language-none">var _entry = Module["_entry"] = function() {
     return (_entry = Module["_entry"] = Module["asm"]["h"]).apply(null, arguments)
 };<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
@@ -171,15 +171,15 @@ function check_input(){var e=document.getElementById("input_char").value;console
 <p>根据动态调试结果，func28返回输入的长度。</p>
 <img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/%E9%95%BF%E5%BA%A6%E9%AA%8C%E8%AF%81.png" class="">    
 
-<p>func45验证输入正确与否(一堆跳转，一看就是字符串比对,目标字符串为数据段中的”0077678b0f3e6cf6e263e6fe3a4c39f3”)。</p>
+<p>func45验证输入正确与否(一堆跳转，一看就是字符串比对,目标字符串为数据段中的"0077678b0f3e6cf6e263e6fe3a4c39f3")。</p>
 <img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func45.png" class="">
 
-<p>函数返回非0则调用f29(1085),否则调用f29(1077)。其中1077指向的数据为”sucess”,f29为输出函数，它调用了函数$a.b.<br>那么前面的func28之后一定还有对输入进行加密的逻辑。调试中发现，加密后的输出被存放的内存偏移为func75中早就定义好的全局变量<code>w2c_g0</code>。</p>
+<p>函数返回非0则调用f29(1085),否则调用f29(1077)。其中1077指向的数据为"sucess",f29为输出函数，它调用了函数$a.b.<br>那么前面的func28之后一定还有对输入进行加密的逻辑。调试中发现，加密后的输出被存放的内存偏移为func75中早就定义好的全局变量<code>w2c_g0</code>。</p>
 <img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func81.png" class="">  
 <img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/moutput.png" class="">  
 
-<p>更改几次输入很容易发现规律,例如:我们的输入为”123”,则输出为:</p>
-<p>$$((128*ord(‘1’))+ord(‘2’))*128+ord(‘3’)$$</p>
+<p>更改几次输入很容易发现规律,例如:我们的输入为"123",则输出为:</p>
+<p>$$((128*ord('1'))+ord('2'))*128+ord('3')$$</p>
 <p>解密脚本:</p>
 <pre class="line-numbers language-none"><code class="language-none">bigNum = int("0077678b0f3e6cf6e263e6fe3a4c39f3",16)
 res = []
