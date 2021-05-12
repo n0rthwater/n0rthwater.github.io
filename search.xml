@@ -1,327 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<search>
-  <entry>
-    <title>wasm逆向分析方法</title>
-    <url>/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/</url>
-    <content><![CDATA[<h1 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h1><blockquote>
-<p>WebAssembly（缩写为Wasm）是基于堆栈的虚拟机的二进制指令格式。Wasm被设计为可编程C / C ++ / Rust等高级语言的可移植目标，可在Web上部署客户端和服务器应用程序。</p>
-</blockquote>
-<h1 id="2-WebAssembly文本格式"><a href="#2-WebAssembly文本格式" class="headerlink" title="2. WebAssembly文本格式"></a>2. WebAssembly文本格式</h1><h2 id="2-1-全局变量"><a href="#2-1-全局变量" class="headerlink" title="2.1. 全局变量"></a>2.1. 全局变量</h2><h3 id="2-1-1-global-get"><a href="#2-1-1-global-get" class="headerlink" title="2.1.1. global.get"></a>2.1.1. <code>global.get</code></h3><p>把全局变量的值推入栈顶。</p>
-<p>Example:</p>
-<pre class="line-numbers language-none"><code class="language-none">global.get $global0
-
-且 global0 = d
-则有如下操作：
-
-|     |  ↘|  d  |      
-|  a  |    |  a  |   
-|  b  |    |  b  |   
-|  c  |    |  c  |      
-└─────┘    └─────┘<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="2-1-2-global-set"><a href="#2-1-2-global-set" class="headerlink" title="2.1.2. global.set"></a>2.1.2. <code>global.set</code></h3><p>从栈顶弹出1个值，并将其设置为全局变量</p>
-<p>Example:</p>
-<pre class="line-numbers language-none"><code class="language-none">global.set $global0
-
-则有如下操作：
-|  d  |↗  |     |      
-|  a  |    |  a  |   
-|  b  |    |  b  |      
-|  c  |    |  c  |      
-└─────┘    └─────┘，且global0 = d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h2 id="2-2-局部变量"><a href="#2-2-局部变量" class="headerlink" title="2.2. 局部变量"></a>2.2. 局部变量</h2><h3 id="2-2-1-local-get"><a href="#2-2-1-local-get" class="headerlink" title="2.2.1. local.get"></a>2.2.1. <code>local.get</code></h3><p>类似<code>global.get</code>,不同之处是它将局部变量入栈。</p>
-<h3 id="2-2-2-local-set"><a href="#2-2-2-local-set" class="headerlink" title="2.2.2. local.set"></a>2.2.2. <code>local.set</code></h3><p>类似<code>global.set</code>,不同之处是它将栈顶值弹出，并赋给1个局部变量。        </p>
-<h3 id="2-2-3-local-tee"><a href="#2-2-3-local-tee" class="headerlink" title="2.2.3. local.tee"></a>2.2.3. <code>local.tee</code></h3><p>与<code>local.set</code>类似，但是它不会将栈顶值弹出。</p>
-<p>Example:</p>
-<pre class="line-numbers language-none"><code class="language-none">local.tee $var0
-
-则有如下操作：
-|  d  |↗ ↘|  d  |      
-|  a  |    |  a  |   
-|  b  |    |  b  |      
-|  c  |    |  c  |      
-└─────┘    └─────┘，且var0 = d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h2 id="2-3-内存操作"><a href="#2-3-内存操作" class="headerlink" title="2.3. 内存操作"></a>2.3. 内存操作</h2><h3 id="2-3-1-load"><a href="#2-3-1-load" class="headerlink" title="2.3.1. load"></a>2.3.1. <code>load</code></h3><p>以栈顶值为地址取数据</p>
-<p>Example:</p>
-<pre class="line-numbers language-none"><code class="language-none">i64.load offset=88
-
-则有如下操作:
-|  d  |↗ ↘|M[d+88]|      
-|  a  |    |  a  |   
-|  b  |    |  b  |      
-|  c  |    |  c  |      
-└─────┘    └─────┘
-即将d出栈，将内存中d+88指向的1个64位数据入栈<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="2-3-2-store"><a href="#2-3-2-store" class="headerlink" title="2.3.2. store"></a>2.3.2. <code>store</code></h3><p>将栈顶值出栈，存到以下一个栈顶值为地址的内存中，即<code>M[stack[-2]] = stack[-1]</code></p>
-<p>Example:</p>
-<pre class="line-numbers language-none"><code class="language-none">local.get $var0
-local.get $var1
-i64.store
-
-| v[1]|↗  |     |      
-| v[0]|↗  |     |   
-|  b  |    |  b  |      
-|  c  |    |  c  |      
-└─────┘    └─────┘
-且M[v[0]] = v[1];<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h2 id="2-4-函数调用"><a href="#2-4-函数调用" class="headerlink" title="2.4. 函数调用"></a>2.4. 函数调用</h2><h3 id="2-4-1-call"><a href="#2-4-1-call" class="headerlink" title="2.4.1. call"></a>2.4.1. <code>call</code></h3><p>函数的参数从左至右依次入栈，调用目标由立即数指定，调用结束以后参数全部出栈，返回值入栈(wasm1.0规定返回值至多有1个)</p>
-<p>Example:</p>
-<pre class="line-numbers language-none"><code class="language-none">call $func6
-
-| p1  |↗  |     |      
-| p0  |↗  | ret |   
-|  b  |    |  b  |      
-|  c  |    |  c  |      
-└─────┘    └─────┘
-即调用函数func6(p0,p1),返回值为ret<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h2 id="2-5-wat文件格式解析"><a href="#2-5-wat文件格式解析" class="headerlink" title="2.5. .wat文件格式解析"></a>2.5. <code>.wat</code>文件格式解析</h2><h3 id="2-5-1-导入表"><a href="#2-5-1-导入表" class="headerlink" title="2.5.1. 导入表"></a>2.5.1. 导入表</h3><p>Example:</p>
-<pre class="line-numbers language-none"><code class="language-none">(import "a" "a" (func (;0;) (type 13)))<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>即wasm导入了名为a的js模块中的a库函数，在js代码中的表现如下:</p>
-<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/importJS.png" class="">  
-
-<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/asmLibraryArg.png" class="">
-
-<p>即wasm中func0实际上就是JS代码中的<code>___assert_fail</code>函数</p>
-<h3 id="2-5-2-导出表"><a href="#2-5-2-导出表" class="headerlink" title="2.5.2. 导出表"></a>2.5.2. 导出表</h3><p>Example:</p>
-<pre class="line-numbers language-none"><code class="language-none">(export "f" (func 27))<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>即wasm将函数func27导出给JS调用，导出的函数名为"f"。</p>
-<h3 id="2-5-3-数据段"><a href="#2-5-3-数据段" class="headerlink" title="2.5.3. 数据段"></a>2.5.3. 数据段</h3><p>Example:</p>
-<pre class="line-numbers language-none"><code class="language-none">(data (;0;) (i32.const 1024) "0077678b0f3e6cf6e263e6fe3a4c39f3\00length is not valid\00Success\00Oops....something wrong\00n &amp;&amp; \22n is null\22\00bn.c\00bignum_from_int\00bignum_from_string\00str &amp;&amp; \22str is null\22\00nbytes &gt; 0 &amp;&amp; \22nbytes must be positive\22\00(nbytes &amp; 1) == 0 &amp;&amp; \22string format must be in hex -&gt; equal number of bytes\22\00(nbytes % (sizeof(uint32_t) * 2)) == 0 &amp;&amp; \22string length must be a multiple of (sizeof(DTYPE) * 2) characters\22\00%8x\00bignum_to_string\00%.08x\00a &amp;&amp; \22a is null\22\00bignum_add\00b &amp;&amp; \22b is null\22\00c &amp;&amp; \22c is null\22\00bignum_mul\00bignum_cmp\00dst &amp;&amp; \22dst is null\22\00bignum_assign\00src &amp;&amp; \22src is null\22\00-+   0X0x\00(null)\00\00\11\00\0a\00\11\11\11\00\00\00\00\05\00\00\00\00\00\00\09\00\00\00\00\0b\00\00\00\00\00\00\00\00\11\00\0f\0a\11\11\11\03\0a\07\00\01\00\09\0b\0b\00\00\09\06\0b\00\00\0b\00\06\11\00\00\00\11\11\11")<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>即程序内存偏移为1024的地方，存放的数据为"0077678b0f3......"</p>
-<h1 id="3-静态分析"><a href="#3-静态分析" class="headerlink" title="3. 静态分析"></a>3. 静态分析</h1><h2 id="3-1-反汇编"><a href="#3-1-反汇编" class="headerlink" title="3.1. 反汇编"></a>3.1. 反汇编</h2><h3 id="3-1-1-ida自带WebAssembly插件-本人没用过"><a href="#3-1-1-ida自带WebAssembly插件-本人没用过" class="headerlink" title="3.1.1. ida自带WebAssembly插件(本人没用过)"></a>3.1.1. ida自带WebAssembly插件(本人没用过)</h3><h3 id="3-1-2-使用WABT"><a href="#3-1-2-使用WABT" class="headerlink" title="3.1.2. 使用WABT"></a>3.1.2. 使用<a href="https://github.com/WebAssembly/wabt">WABT</a></h3><pre class="line-numbers language-none"><code class="language-none">./wasm2wat test.wasm -o test.wat    //获取字节码<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h2 id="3-2-反编译"><a href="#3-2-反编译" class="headerlink" title="3.2. 反编译"></a>3.2. 反编译</h2><h3 id="3-2-1-使用WABT"><a href="#3-2-1-使用WABT" class="headerlink" title="3.2.1. 使用WABT:"></a>3.2.1. 使用WABT:</h3><p><code>./wasm2c test.wasm -o test.c</code>     </p>
-<p>得到<code>.c</code>文件和<code>.h</code>文件。<br>这一步得到的代码可读性仍然很差，光是行数也很吓人。</p>
-<p>另外还可以使用wasm-decompiler:<br><code>./wasm-decompiler test.wasm</code><br>得到的是伪C代码，效果也不是很好。</p>
-<h3 id="3-2-2-优化——gcc重新编译"><a href="#3-2-2-优化——gcc重新编译" class="headerlink" title="3.2.2. 优化——gcc重新编译"></a>3.2.2. 优化——gcc重新编译</h3><p>将wasm2c反编译得到的<code>.c</code>文件和<code>.h</code>文件和WABT中的<code>wasm-rt.h</code>放在一个文件夹下重新编译。</p>
-<pre class="line-numbers language-none"><code class="language-none">gcc -c test.c -o test.o<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>这一步要注意，链接会出错(因为很多函数没有具体实现)，所以我们只生成目标文件即可。<br>到这里我们就得到了可以用ida分析的elf文件。</p>
-<h1 id="4-动态分析"><a href="#4-动态分析" class="headerlink" title="4. 动态分析"></a>4. 动态分析</h1><p>python搭建临时服务器</p>
-<pre class="line-numbers language-none"><code class="language-none">python -m http.server &lt;port&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>然后双击html文件，按<code>f12</code>，然后按<code>ctrl+r</code>即可开始调试     </p>
-<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/wasm%E8%B0%83%E8%AF%95.png" class="" title="调试窗口">   
-<p>如图中右侧窗口所示，我们可以使用谷歌自带的wasm调试器设置断点、观察堆栈、局部变量、调用栈等信息。</p>
-<h1 id="5-实战"><a href="#5-实战" class="headerlink" title="5. 实战"></a>5. 实战</h1><h2 id="5-1-2021蓝帽杯calc"><a href="#5-1-2021蓝帽杯calc" class="headerlink" title="5.1. 2021蓝帽杯calc"></a>5.1. 2021蓝帽杯calc</h2><h3 id="5-1-1-分析html和js代码"><a href="#5-1-1-分析html和js代码" class="headerlink" title="5.1.1 分析html和js代码"></a>5.1.1 分析html和js代码</h3><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/%E8%93%9D%E5%B8%BD%E6%9D%AFcalc_html%E9%A1%B5%E9%9D%A2.jpg" class="" title="html页面">    
-<p>主要判断逻辑在<code>check_input</code>函数中。 </p>
-<pre class="line-numbers language-none"><code class="language-none">&lt;script&gt;
-function check_input(){var e=document.getElementById("input_char").value;console.log(e);Module.ccall("entry","number",["string"],[e])}
-&lt;/script&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>该函数读取输入，并将输入作为ccall函数的参数。<br>js代码中ccall的定义如下：</p>
-<pre class="line-numbers language-none"><code class="language-none">function ccall(ident, returnType, argTypes, args, opts) {
-    var toC = {
-        "string": function(str) {
-            var ret = 0;
-            if (str !== null &amp;&amp; str !== undefined &amp;&amp; str !== 0) {
-                var len = (str.length &lt;&lt; 2) + 1;
-                ret = stackAlloc(len);
-                stringToUTF8(str, ret, len)
-            }
-            return ret
-        },
-        "array": function(arr) {
-            var ret = stackAlloc(arr.length);
-            writeArrayToMemory(arr, ret);
-            return ret
-        }
-    };
-    function convertReturnValue(ret) {
-        if (returnType === "string") return UTF8ToString(ret);
-        if (returnType === "boolean") return Boolean(ret);
-        return ret
-    }
-    var func = getCFunc(ident);
-    var cArgs = [];
-    var stack = 0;
-    if (args) {
-        for (var i = 0; i &lt; args.length; i++) {
-            var converter = toC[argTypes[i]];
-            if (converter) {
-                if (stack === 0) stack = stackSave();
-                cArgs[i] = converter(args[i])
-            } else {
-                cArgs[i] = args[i]
-            }
-        }
-    }
-    var ret = func.apply(null, cArgs);
-    ret = convertReturnValue(ret);
-    if (stack !== 0) stackRestore(stack);
-    return ret
-}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>该函数首先调用getCFunc("entry"),getCFunc定义如下：  </p>
-<pre class="line-numbers language-none"><code class="language-none">function getCFunc(ident) {
-    var func = Module["_" + ident];
-    assert(func, "Cannot call unknown function " + ident + ", make sure it is exported");
-    return func
-}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>其中Module["_entry"]如下：</p>
-<pre class="line-numbers language-none"><code class="language-none">var _entry = Module["_entry"] = function() {
-    return (_entry = Module["_entry"] = Module["asm"]["h"]).apply(null, arguments)
-};<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>这里的<code>Module["asm"]["h"]</code>其实是调用了<code>.wasm</code>中的导出函数，如下：</p>
-<pre class="line-numbers language-none"><code class="language-none">(export "f" (func 27))
-(export "g" (func 86))
-(export "h" (func 75))
-(export "i" (table 0))
-(export "j" (func 48))
-(export "k" (func 47))
-(export "l" (func 46))<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>即函数<code>check_input</code>中的<code>func</code>实际上指向<code>.wasm</code>文件中的func75(同时也是IDA中的<code>_w2c_h</code>函数，如下)</p>
-<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/w2c_h.png" class="" title="w2c_h函数">
-
-<p>接下来就是将我们的输入存放到内存中，然后去调用func75。</p>
-<p>根据动态调试结果，func28返回输入的长度。</p>
-<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/%E9%95%BF%E5%BA%A6%E9%AA%8C%E8%AF%81.png" class="">    
-
-<p>func45验证输入正确与否(一堆跳转，一看就是字符串比对,目标字符串为数据段中的"0077678b0f3e6cf6e263e6fe3a4c39f3")。</p>
-<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func45.png" class="">
-
-<p>函数返回非0则调用f29(1085),否则调用f29(1077)。其中1077指向的数据为"sucess",f29为输出函数，它调用了函数$a.b.<br>那么前面的func28之后一定还有对输入进行加密的逻辑。调试中发现，加密后的输出被存放的内存偏移为func75中早就定义好的全局变量<code>w2c_g0</code>。</p>
-<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func81.png" class="">  
-<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/moutput.png" class="">  
-
-<p>更改几次输入很容易发现规律,例如:我们的输入为"123",则输出为:</p>
-<p>$$((128*ord('1'))+ord('2'))*128+ord('3')$$</p>
-<p>解密脚本:</p>
-<pre class="line-numbers language-none"><code class="language-none">bigNum = int("0077678b0f3e6cf6e263e6fe3a4c39f3",16)
-res = []
-while bigNum != 0:
-    res.append(bigNum%128)
-    bigNum = bigNum &gt;&gt; 7
-print(''.join([chr(i) for i in res[::-1]]))<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h1 id="6-参考文章"><a href="#6-参考文章" class="headerlink" title="6. 参考文章"></a>6. 参考文章</h1><ol>
-<li><a href="https://xz.aliyun.com/t/5170">一种Wasm逆向静态分析方法</a></li>
-<li><a href="https://juejin.cn/post/6844904077411745800#heading-4">Wasm介绍之4：函数调用</a></li>
-<li><a href="https://developer.mozilla.org/zh-CN/docs/WebAssembly/Understanding_the_text_format">理解WebAssembly文本格式</a></li>
-</ol>
-<h1 id="附件"><a href="#附件" class="headerlink" title="附件"></a>附件</h1><a href="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/calc.7z" title="calc.7z">calc.7z</a>
-]]></content>
+<search> 
+  
+  
+    
+    <entry>
+      <title>kernel-pwn之demo-null-deference</title>
+      <link href="2021/05/12/kernel-pwn-zhi-demo-null-deference/"/>
+      <url>2021/05/12/kernel-pwn-zhi-demo-null-deference/</url>
+      
+        <content type="html"><![CDATA[]]></content>
+      
+      
       <categories>
-        <category>逆向工程</category>
+          
+          <category> pwn </category>
+          
+          <category> kernel-pwn </category>
+          
       </categories>
-      <tags>
-        <tag>wasm</tag>
-        <tag>writeup</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>kernel-pwn</title>
-    <url>/2021/05/07/kernel-pwn/</url>
-    <content><![CDATA[<pre class="line-numbers language-none"><code class="language-none">实验环境: Ubuntu 20.04 64位
-gcc版本: 9.3.0
-内核版本: 5.4.5
-BusyBox: 1.33.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h1 id="1-下载kernel源码"><a href="#1-下载kernel源码" class="headerlink" title="1. 下载kernel源码"></a>1. 下载kernel源码</h1><p>国内镜像：<a href="https://mirrors.tuna.tsinghua.edu.cn/kernel/">https://mirrors.tuna.tsinghua.edu.cn/kernel/</a></p>
-<pre class="line-numbers language-none"><code class="language-none">wget https://mirrors.tuna.tsinghua.edu.cn/kernel/v2.6/linux-5.4.5.tar.gz -O linux-5.4.5.tar.gz
-tar -xvf linux-5.4.5.tar.gz<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<h1 id="2-编译kernel"><a href="#2-编译kernel" class="headerlink" title="2. 编译kernel"></a>2. 编译kernel</h1><pre class="line-numbers language-none"><code class="language-none">cd linux-5.4.5/
-make menuconfig
-make<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-<pre class="line-numbers language-none"><code class="language-none">问题1： 
-make[1]: *** No rule to make target 'debian/certs/benh@debian.org.cert.pem', needed by 'certs/x509_certificate_list'。 停止。
-make[1]: *** 正在等待未完成的任务....
-  CC      certs/system_keyring.o
-  CC      kernel/groups.o
-Makefile:1002: recipe for target 'certs' failed
-make: *** [certs] Error 2
-
-解决方案:
-打开.config文件，注释掉
-CONFIG_SYSTEM_TRUSTED_KEYS="debian/certs/benh@debian.org.cert.pem"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h1 id="3-增加syscall"><a href="#3-增加syscall" class="headerlink" title="3. 增加syscall"></a>3. 增加syscall</h1><h2 id="3-1-在syscall-table中添加信息"><a href="#3-1-在syscall-table中添加信息" class="headerlink" title="3.1. 在syscall table中添加信息"></a>3.1. 在syscall table中添加信息</h2><p>因为编译出来的内核是64位的，所以要在“./linux-5.4.5/arch/x86/entry/syscalls/syscall_64.tbl”中添加</p>
-<pre class="line-numbers language-C" data-language="C"><code class="language-C">&lt;num&gt;    &lt;abi&gt;  &lt;name&gt;                    &lt;entry point&gt;
-436     common  hello                   __x64_sys_hello<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<h2 id="3-2-增加syscall的宏"><a href="#3-2-增加syscall的宏" class="headerlink" title="3.2. 增加syscall的宏"></a>3.2. 增加syscall的宏</h2><p>在“linux-5.4.5/include/uapi/asm-generic/unistd.h”中修改：</p>
-<pre class="line-numbers language-C" data-language="C"><code class="language-C">#define __NR_hello 436
-__SYSCALL(__NR_hello, sys_hello)
-
-#undef __NR_syscalls
-#define __NR_syscalls 437   //系统调用的个数<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="3-3-添加函数定义"><a href="#3-3-添加函数定义" class="headerlink" title="3.3. 添加函数定义"></a>3.3. 添加函数定义</h2><p>在include/linux/syscalls.h中添加：    </p>
-<pre class="line-numbers language-C" data-language="C"><code class="language-C">asmlinkage long sys_hello(void);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p><a href="https://blog.csdn.net/panhewu9919/article/details/99438304">asmlinkage</a>是一个宏，这里使用asmlinkage是因为syscall handler是汇编代码，而syscall routine是C代码，在使用syscall的时候是通过堆栈传递参数的，而asmlinkage的作用就是限定函数从堆栈中获取参数。</p>
-<h2 id="3-4-编写函数代码"><a href="#3-4-编写函数代码" class="headerlink" title="3.4. 编写函数代码"></a>3.4. 编写函数代码</h2><p>在./kernel/sys.c中添加代码:</p>
-<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">SYSCALL_DEFINE0</span><span class="token punctuation">(</span>hello<span class="token punctuation">)</span>
-<span class="token punctuation">{</span>
-    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Hello,my syscall.\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="3-5-重新编译"><a href="#3-5-重新编译" class="headerlink" title="3.5. 重新编译"></a>3.5. 重新编译</h2><pre class="line-numbers language-none"><code class="language-none">make -j2<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<h1 id="4-安装busybox"><a href="#4-安装busybox" class="headerlink" title="4. 安装busybox"></a>4. 安装busybox</h1><h2 id="4-1-下载"><a href="#4-1-下载" class="headerlink" title="4.1. 下载"></a>4.1. 下载</h2><pre class="line-numbers language-none"><code class="language-none">wget https://busybox.net/downloads/busybox-1.33.1.tar.bz2 \
-&amp;&amp; tar -xjf busybox-1.33.1.tar.bz2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<h2 id="4-2-编译"><a href="#4-2-编译" class="headerlink" title="4.2. 编译"></a>4.2. 编译</h2><pre class="line-numbers language-none"><code class="language-none">make menuconfig   //Build Options，一定要选择Build static binary (no shared libs)，切记！！！
-make
-make install<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="4-3-配置"><a href="#4-3-配置" class="headerlink" title="4.3. 配置"></a>4.3. 配置</h2><pre class="line-numbers language-none"><code class="language-none">cd _install 
-mkdir -pv {bin,sbin,etc,proc,sys,usr/{bin,sbin}}
-
-# etc目录下创建inittab文件，文件内容如下：
-::sysinit:/etc/init.d/rcS   #指定初始化脚本
-::askfirst:-/bin/ash
-::ctrlaltdel:/sbin/reboot
-::shutdown:/sbin/swapoff -a
-::shutdown:/bin/umount -a -r
-::restart:/sbin/init
-
-# etc目录下
-mkdir init.d &amp;&amp; cd init.d
-touch rcS
-
-# rcS内容
-#!/bin/sh
-mount -t proc none /proc
-mount -t sys none /sys
-/bin/mount -n -t sysfs none /sys
-/bin/mount -t ramfs none /dev
-/sbin/mdev -s    # We need this to find /dev/sda later
-
-# 配置dev目录
-mkdir dev
-sudo mknod dev/ttyAMA0 c 204 64
-sudo mknod dev/null c 1 3
-sudo mknod dev/console c 5 1
-
-# 创建文件系统
-find . | cpio -o --format=newc &gt; ../rootfs2-1.img
-
-# 运行内核镜像
-qemu-system-x86_64 -kernel ./arch/x86/boot/bzImage -initrd ./rootfs2-1.img -append "root=/dev/ram rdinit=/sbin/init"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h1 id="5-测试系统调用"><a href="#5-测试系统调用" class="headerlink" title="5. 测试系统调用"></a>5. 测试系统调用</h1><pre class="line-numbers language-C" data-language="C"><code class="language-C">// test_sys_hello.c
-#define _GNU_SOURCE
-#include &lt;unistd.h&gt;
-#include &lt;sys/syscall.h&gt;
-#include &lt;stdio.h&gt;
-#define __NR_hello 436 //系统调用号
-
-int main() {
-    printf("Prepare to call syscall hello.\n");
-    syscall(__NR_hello);
-    return 0;
-}
-
-// 编译,务必静态编译
-gcc test_sys_hello.c -o syshello -static  <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>将生成的elf文件放到文件系统中，然后重新生成文件系统镜像，启动系统，运行。</p>
-<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
-<li><a href="https://ctf-wiki.org/pwn/linux/kernel/basic_knowledge/">ctf-wiki</a></li>
-<li><a href="https://github.com/bsauce/kernel-security-learning">https://github.com/bsauce/kernel-security-learning</a></li>
-<li><a href="https://d1nn3r.github.io/2018/09/19/kernel-pwn/">https://d1nn3r.github.io/2018/09/19/kernel-pwn/</a></li>
-</ol>
-]]></content>
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>kernel-pwn之环境配置</title>
+      <link href="2021/05/07/kernel-pwn-zhi-huan-jing-pei-zhi/"/>
+      <url>2021/05/07/kernel-pwn-zhi-huan-jing-pei-zhi/</url>
+      
+        <content type="html"><![CDATA[<pre class="line-numbers language-none"><code class="language-none">实验环境: Ubuntu 20.04 64位gcc版本: 9.3.0内核版本: 5.4.5BusyBox: 1.33.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre><h1 id="1-下载kernel源码"><a href="#1-下载kernel源码" class="headerlink" title="1. 下载kernel源码"></a>1. 下载kernel源码</h1><p>国内镜像：<a href="https://mirrors.tuna.tsinghua.edu.cn/kernel/">https://mirrors.tuna.tsinghua.edu.cn/kernel/</a></p><pre class="line-numbers language-none"><code class="language-none">wget https://mirrors.tuna.tsinghua.edu.cn/kernel/v2.6/linux-5.4.5.tar.gz -O linux-5.4.5.tar.gztar -xvf linux-5.4.5.tar.gz<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre><h1 id="2-编译kernel"><a href="#2-编译kernel" class="headerlink" title="2. 编译kernel"></a>2. 编译kernel</h1><pre class="line-numbers language-none"><code class="language-none">cd linux-5.4.5/make menuconfigmake<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><pre class="line-numbers language-none"><code class="language-none">问题1： make[1]: *** No rule to make target 'debian/certs/benh@debian.org.cert.pem', needed by 'certs/x509_certificate_list'。 停止。make[1]: *** 正在等待未完成的任务....  CC      certs/system_keyring.o  CC      kernel/groups.oMakefile:1002: recipe for target 'certs' failedmake: *** [certs] Error 2解决方案:打开.config文件，注释掉CONFIG_SYSTEM_TRUSTED_KEYS="debian/certs/benh@debian.org.cert.pem"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h1 id="3-增加syscall"><a href="#3-增加syscall" class="headerlink" title="3. 增加syscall"></a>3. 增加syscall</h1><h2 id="3-1-在syscall-table中添加信息"><a href="#3-1-在syscall-table中添加信息" class="headerlink" title="3.1. 在syscall table中添加信息"></a>3.1. 在syscall table中添加信息</h2><p>因为编译出来的内核是64位的，所以要在“./linux-5.4.5/arch/x86/entry/syscalls/syscall_64.tbl”中添加</p><pre class="line-numbers language-C" data-language="C"><code class="language-C">&lt;num&gt;    &lt;abi&gt;  &lt;name&gt;                    &lt;entry point&gt;436     common  hello                   __x64_sys_hello<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre><h2 id="3-2-增加syscall的宏"><a href="#3-2-增加syscall的宏" class="headerlink" title="3.2. 增加syscall的宏"></a>3.2. 增加syscall的宏</h2><p>在“linux-5.4.5/include/uapi/asm-generic/unistd.h”中修改：</p><pre class="line-numbers language-C" data-language="C"><code class="language-C">#define __NR_hello 436__SYSCALL(__NR_hello, sys_hello)#undef __NR_syscalls#define __NR_syscalls 437   //系统调用的个数<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="3-3-添加函数定义"><a href="#3-3-添加函数定义" class="headerlink" title="3.3. 添加函数定义"></a>3.3. 添加函数定义</h2><p>在include/linux/syscalls.h中添加：    </p><pre class="line-numbers language-C" data-language="C"><code class="language-C">asmlinkage long sys_hello(void);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p><a href="https://blog.csdn.net/panhewu9919/article/details/99438304">asmlinkage</a>是一个宏，这里使用asmlinkage是因为syscall handler是汇编代码，而syscall routine是C代码，在使用syscall的时候是通过堆栈传递参数的，而asmlinkage的作用就是限定函数从堆栈中获取参数。</p><h2 id="3-4-编写函数代码"><a href="#3-4-编写函数代码" class="headerlink" title="3.4. 编写函数代码"></a>3.4. 编写函数代码</h2><p>在./kernel/sys.c中添加代码:</p><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">SYSCALL_DEFINE0</span><span class="token punctuation">(</span>hello<span class="token punctuation">)</span><span class="token punctuation">{</span>    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Hello,my syscall.\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="3-5-重新编译"><a href="#3-5-重新编译" class="headerlink" title="3.5. 重新编译"></a>3.5. 重新编译</h2><pre class="line-numbers language-none"><code class="language-none">make -j2<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><h1 id="4-安装busybox"><a href="#4-安装busybox" class="headerlink" title="4. 安装busybox"></a>4. 安装busybox</h1><h2 id="4-1-下载"><a href="#4-1-下载" class="headerlink" title="4.1. 下载"></a>4.1. 下载</h2><pre class="line-numbers language-none"><code class="language-none">wget https://busybox.net/downloads/busybox-1.33.1.tar.bz2 \&amp;&amp; tar -xjf busybox-1.33.1.tar.bz2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre><h2 id="4-2-编译"><a href="#4-2-编译" class="headerlink" title="4.2. 编译"></a>4.2. 编译</h2><pre class="line-numbers language-none"><code class="language-none">make menuconfig   //Build Options，一定要选择Build static binary (no shared libs)，切记！！！makemake install<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><h2 id="4-3-配置"><a href="#4-3-配置" class="headerlink" title="4.3. 配置"></a>4.3. 配置</h2><pre class="line-numbers language-none"><code class="language-none">cd _install mkdir -pv {bin,sbin,etc,proc,sys,usr/{bin,sbin}}# etc目录下创建inittab文件，文件内容如下：::sysinit:/etc/init.d/rcS   #指定初始化脚本::askfirst:-/bin/ash::ctrlaltdel:/sbin/reboot::shutdown:/sbin/swapoff -a::shutdown:/bin/umount -a -r::restart:/sbin/init# etc目录下mkdir init.d &amp;&amp; cd init.dtouch rcS# rcS内容#!/bin/shmount -t proc none /procmount -t sys none /sys/bin/mount -n -t sysfs none /sys/bin/mount -t ramfs none /dev/sbin/mdev -s    # We need this to find /dev/sda later# 配置dev目录mkdir devsudo mknod dev/ttyAMA0 c 204 64sudo mknod dev/null c 1 3sudo mknod dev/console c 5 1# 创建文件系统find . | cpio -o --format=newc &gt; ../rootfs2-1.img# 运行内核镜像qemu-system-x86_64 -kernel ./arch/x86/boot/bzImage -initrd ./rootfs2-1.img -append "root=/dev/ram rdinit=/sbin/init"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h1 id="5-测试系统调用"><a href="#5-测试系统调用" class="headerlink" title="5. 测试系统调用"></a>5. 测试系统调用</h1><pre class="line-numbers language-C" data-language="C"><code class="language-C">// test_sys_hello.c#define _GNU_SOURCE#include &lt;unistd.h&gt;#include &lt;sys/syscall.h&gt;#include &lt;stdio.h&gt;#define __NR_hello 436 //系统调用号int main() {    printf("Prepare to call syscall hello.\n");    syscall(__NR_hello);    return 0;}// 编译,务必静态编译gcc test_sys_hello.c -o syshello -static  <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>将生成的elf文件放到文件系统中，然后重新生成文件系统镜像，启动系统，运行。</p><h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol><li><a href="https://ctf-wiki.org/pwn/linux/kernel/basic_knowledge/">ctf-wiki</a></li><li><a href="https://github.com/bsauce/kernel-security-learning">https://github.com/bsauce/kernel-security-learning</a></li><li><a href="https://d1nn3r.github.io/2018/09/19/kernel-pwn/">https://d1nn3r.github.io/2018/09/19/kernel-pwn/</a></li></ol>]]></content>
+      
+      
       <categories>
-        <category>pwn</category>
+          
+          <category> pwn </category>
+          
+          <category> kernel-pwn </category>
+          
       </categories>
-      <tags>
-        <tag>kernel pwn</tag>
-      </tags>
-  </entry>
+      
+      
+        <tags>
+            
+            <tag> kernel-pwn </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>wasm逆向分析方法</title>
+      <link href="2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/"/>
+      <url>2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/</url>
+      
+        <content type="html"><![CDATA[<h1 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h1><blockquote><p>WebAssembly（缩写为Wasm）是基于堆栈的虚拟机的二进制指令格式。Wasm被设计为可编程C / C ++ / Rust等高级语言的可移植目标，可在Web上部署客户端和服务器应用程序。</p></blockquote><h1 id="2-WebAssembly文本格式"><a href="#2-WebAssembly文本格式" class="headerlink" title="2. WebAssembly文本格式"></a>2. WebAssembly文本格式</h1><h2 id="2-1-全局变量"><a href="#2-1-全局变量" class="headerlink" title="2.1. 全局变量"></a>2.1. 全局变量</h2><h3 id="2-1-1-global-get"><a href="#2-1-1-global-get" class="headerlink" title="2.1.1. global.get"></a>2.1.1. <code>global.get</code></h3><p>把全局变量的值推入栈顶。</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">global.get $global0且 global0 = d则有如下操作：|     |  ↘|  d  |      |  a  |    |  a  |   |  b  |    |  b  |   |  c  |    |  c  |      └─────┘    └─────┘<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h3 id="2-1-2-global-set"><a href="#2-1-2-global-set" class="headerlink" title="2.1.2. global.set"></a>2.1.2. <code>global.set</code></h3><p>从栈顶弹出1个值，并将其设置为全局变量</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">global.set $global0则有如下操作：|  d  |↗  |     |      |  a  |    |  a  |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘，且global0 = d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="2-2-局部变量"><a href="#2-2-局部变量" class="headerlink" title="2.2. 局部变量"></a>2.2. 局部变量</h2><h3 id="2-2-1-local-get"><a href="#2-2-1-local-get" class="headerlink" title="2.2.1. local.get"></a>2.2.1. <code>local.get</code></h3><p>类似<code>global.get</code>,不同之处是它将局部变量入栈。</p><h3 id="2-2-2-local-set"><a href="#2-2-2-local-set" class="headerlink" title="2.2.2. local.set"></a>2.2.2. <code>local.set</code></h3><p>类似<code>global.set</code>,不同之处是它将栈顶值弹出，并赋给1个局部变量。        </p><h3 id="2-2-3-local-tee"><a href="#2-2-3-local-tee" class="headerlink" title="2.2.3. local.tee"></a>2.2.3. <code>local.tee</code></h3><p>与<code>local.set</code>类似，但是它不会将栈顶值弹出。</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">local.tee $var0则有如下操作：|  d  |↗ ↘|  d  |      |  a  |    |  a  |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘，且var0 = d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="2-3-内存操作"><a href="#2-3-内存操作" class="headerlink" title="2.3. 内存操作"></a>2.3. 内存操作</h2><h3 id="2-3-1-load"><a href="#2-3-1-load" class="headerlink" title="2.3.1. load"></a>2.3.1. <code>load</code></h3><p>以栈顶值为地址取数据</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">i64.load offset=88则有如下操作:|  d  |↗ ↘|M[d+88]|      |  a  |    |  a  |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘即将d出栈，将内存中d+88指向的1个64位数据入栈<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h3 id="2-3-2-store"><a href="#2-3-2-store" class="headerlink" title="2.3.2. store"></a>2.3.2. <code>store</code></h3><p>将栈顶值出栈，存到以下一个栈顶值为地址的内存中，即<code>M[stack[-2]] = stack[-1]</code></p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">local.get $var0local.get $var1i64.store| v[1]|↗  |     |      | v[0]|↗  |     |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘且M[v[0]] = v[1];<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="2-4-函数调用"><a href="#2-4-函数调用" class="headerlink" title="2.4. 函数调用"></a>2.4. 函数调用</h2><h3 id="2-4-1-call"><a href="#2-4-1-call" class="headerlink" title="2.4.1. call"></a>2.4.1. <code>call</code></h3><p>函数的参数从左至右依次入栈，调用目标由立即数指定，调用结束以后参数全部出栈，返回值入栈(wasm1.0规定返回值至多有1个)</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">call $func6| p1  |↗  |     |      | p0  |↗  | ret |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘即调用函数func6(p0,p1),返回值为ret<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="2-5-wat文件格式解析"><a href="#2-5-wat文件格式解析" class="headerlink" title="2.5. .wat文件格式解析"></a>2.5. <code>.wat</code>文件格式解析</h2><h3 id="2-5-1-导入表"><a href="#2-5-1-导入表" class="headerlink" title="2.5.1. 导入表"></a>2.5.1. 导入表</h3><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">(import "a" "a" (func (;0;) (type 13)))<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>即wasm导入了名为a的js模块中的a库函数，在js代码中的表现如下:</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/importJS.png" class="">  <img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/asmLibraryArg.png" class=""><p>即wasm中func0实际上就是JS代码中的<code>___assert_fail</code>函数</p><h3 id="2-5-2-导出表"><a href="#2-5-2-导出表" class="headerlink" title="2.5.2. 导出表"></a>2.5.2. 导出表</h3><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">(export "f" (func 27))<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>即wasm将函数func27导出给JS调用，导出的函数名为"f"。</p><h3 id="2-5-3-数据段"><a href="#2-5-3-数据段" class="headerlink" title="2.5.3. 数据段"></a>2.5.3. 数据段</h3><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">(data (;0;) (i32.const 1024) "0077678b0f3e6cf6e263e6fe3a4c39f3\00length is not valid\00Success\00Oops....something wrong\00n &amp;&amp; \22n is null\22\00bn.c\00bignum_from_int\00bignum_from_string\00str &amp;&amp; \22str is null\22\00nbytes &gt; 0 &amp;&amp; \22nbytes must be positive\22\00(nbytes &amp; 1) == 0 &amp;&amp; \22string format must be in hex -&gt; equal number of bytes\22\00(nbytes % (sizeof(uint32_t) * 2)) == 0 &amp;&amp; \22string length must be a multiple of (sizeof(DTYPE) * 2) characters\22\00%8x\00bignum_to_string\00%.08x\00a &amp;&amp; \22a is null\22\00bignum_add\00b &amp;&amp; \22b is null\22\00c &amp;&amp; \22c is null\22\00bignum_mul\00bignum_cmp\00dst &amp;&amp; \22dst is null\22\00bignum_assign\00src &amp;&amp; \22src is null\22\00-+   0X0x\00(null)\00\00\11\00\0a\00\11\11\11\00\00\00\00\05\00\00\00\00\00\00\09\00\00\00\00\0b\00\00\00\00\00\00\00\00\11\00\0f\0a\11\11\11\03\0a\07\00\01\00\09\0b\0b\00\00\09\06\0b\00\00\0b\00\06\11\00\00\00\11\11\11")<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>即程序内存偏移为1024的地方，存放的数据为"0077678b0f3......"</p><h1 id="3-静态分析"><a href="#3-静态分析" class="headerlink" title="3. 静态分析"></a>3. 静态分析</h1><h2 id="3-1-反汇编"><a href="#3-1-反汇编" class="headerlink" title="3.1. 反汇编"></a>3.1. 反汇编</h2><h3 id="3-1-1-ida自带WebAssembly插件-本人没用过"><a href="#3-1-1-ida自带WebAssembly插件-本人没用过" class="headerlink" title="3.1.1. ida自带WebAssembly插件(本人没用过)"></a>3.1.1. ida自带WebAssembly插件(本人没用过)</h3><h3 id="3-1-2-使用WABT"><a href="#3-1-2-使用WABT" class="headerlink" title="3.1.2. 使用WABT"></a>3.1.2. 使用<a href="https://github.com/WebAssembly/wabt">WABT</a></h3><pre class="line-numbers language-none"><code class="language-none">./wasm2wat test.wasm -o test.wat    //获取字节码<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><h2 id="3-2-反编译"><a href="#3-2-反编译" class="headerlink" title="3.2. 反编译"></a>3.2. 反编译</h2><h3 id="3-2-1-使用WABT"><a href="#3-2-1-使用WABT" class="headerlink" title="3.2.1. 使用WABT:"></a>3.2.1. 使用WABT:</h3><p><code>./wasm2c test.wasm -o test.c</code>     </p><p>得到<code>.c</code>文件和<code>.h</code>文件。<br>这一步得到的代码可读性仍然很差，光是行数也很吓人。</p><p>另外还可以使用wasm-decompiler:<br><code>./wasm-decompiler test.wasm</code><br>得到的是伪C代码，效果也不是很好。</p><h3 id="3-2-2-优化——gcc重新编译"><a href="#3-2-2-优化——gcc重新编译" class="headerlink" title="3.2.2. 优化——gcc重新编译"></a>3.2.2. 优化——gcc重新编译</h3><p>将wasm2c反编译得到的<code>.c</code>文件和<code>.h</code>文件和WABT中的<code>wasm-rt.h</code>放在一个文件夹下重新编译。</p><pre class="line-numbers language-none"><code class="language-none">gcc -c test.c -o test.o<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>这一步要注意，链接会出错(因为很多函数没有具体实现)，所以我们只生成目标文件即可。<br>到这里我们就得到了可以用ida分析的elf文件。</p><h1 id="4-动态分析"><a href="#4-动态分析" class="headerlink" title="4. 动态分析"></a>4. 动态分析</h1><p>python搭建临时服务器</p><pre class="line-numbers language-none"><code class="language-none">python -m http.server &lt;port&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>然后双击html文件，按<code>f12</code>，然后按<code>ctrl+r</code>即可开始调试     </p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/wasm%E8%B0%83%E8%AF%95.png" class="" title="调试窗口">   <p>如图中右侧窗口所示，我们可以使用谷歌自带的wasm调试器设置断点、观察堆栈、局部变量、调用栈等信息。</p><h1 id="5-实战"><a href="#5-实战" class="headerlink" title="5. 实战"></a>5. 实战</h1><h2 id="5-1-2021蓝帽杯calc"><a href="#5-1-2021蓝帽杯calc" class="headerlink" title="5.1. 2021蓝帽杯calc"></a>5.1. 2021蓝帽杯calc</h2><h3 id="5-1-1-分析html和js代码"><a href="#5-1-1-分析html和js代码" class="headerlink" title="5.1.1 分析html和js代码"></a>5.1.1 分析html和js代码</h3><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/%E8%93%9D%E5%B8%BD%E6%9D%AFcalc_html%E9%A1%B5%E9%9D%A2.jpg" class="" title="html页面">    <p>主要判断逻辑在<code>check_input</code>函数中。 </p><pre class="line-numbers language-none"><code class="language-none">&lt;script&gt;function check_input(){var e=document.getElementById("input_char").value;console.log(e);Module.ccall("entry","number",["string"],[e])}&lt;/script&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><p>该函数读取输入，并将输入作为ccall函数的参数。<br>js代码中ccall的定义如下：</p><pre class="line-numbers language-none"><code class="language-none">function ccall(ident, returnType, argTypes, args, opts) {    var toC = {        "string": function(str) {            var ret = 0;            if (str !== null &amp;&amp; str !== undefined &amp;&amp; str !== 0) {                var len = (str.length &lt;&lt; 2) + 1;                ret = stackAlloc(len);                stringToUTF8(str, ret, len)            }            return ret        },        "array": function(arr) {            var ret = stackAlloc(arr.length);            writeArrayToMemory(arr, ret);            return ret        }    };    function convertReturnValue(ret) {        if (returnType === "string") return UTF8ToString(ret);        if (returnType === "boolean") return Boolean(ret);        return ret    }    var func = getCFunc(ident);    var cArgs = [];    var stack = 0;    if (args) {        for (var i = 0; i &lt; args.length; i++) {            var converter = toC[argTypes[i]];            if (converter) {                if (stack === 0) stack = stackSave();                cArgs[i] = converter(args[i])            } else {                cArgs[i] = args[i]            }        }    }    var ret = func.apply(null, cArgs);    ret = convertReturnValue(ret);    if (stack !== 0) stackRestore(stack);    return ret}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>该函数首先调用getCFunc("entry"),getCFunc定义如下：  </p><pre class="line-numbers language-none"><code class="language-none">function getCFunc(ident) {    var func = Module["_" + ident];    assert(func, "Cannot call unknown function " + ident + ", make sure it is exported");    return func}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>其中Module["_entry"]如下：</p><pre class="line-numbers language-none"><code class="language-none">var _entry = Module["_entry"] = function() {    return (_entry = Module["_entry"] = Module["asm"]["h"]).apply(null, arguments)};<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><p>这里的<code>Module["asm"]["h"]</code>其实是调用了<code>.wasm</code>中的导出函数，如下：</p><pre class="line-numbers language-none"><code class="language-none">(export "f" (func 27))(export "g" (func 86))(export "h" (func 75))(export "i" (table 0))(export "j" (func 48))(export "k" (func 47))(export "l" (func 46))<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>即函数<code>check_input</code>中的<code>func</code>实际上指向<code>.wasm</code>文件中的func75(同时也是IDA中的<code>_w2c_h</code>函数，如下)</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/w2c_h.png" class="" title="w2c_h函数"><p>接下来就是将我们的输入存放到内存中，然后去调用func75。</p><p>根据动态调试结果，func28返回输入的长度。</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/%E9%95%BF%E5%BA%A6%E9%AA%8C%E8%AF%81.png" class="">    <p>func45验证输入正确与否(一堆跳转，一看就是字符串比对,目标字符串为数据段中的"0077678b0f3e6cf6e263e6fe3a4c39f3")。</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func45.png" class=""><p>函数返回非0则调用f29(1085),否则调用f29(1077)。其中1077指向的数据为"sucess",f29为输出函数，它调用了函数$a.b.<br>那么前面的func28之后一定还有对输入进行加密的逻辑。调试中发现，加密后的输出被存放的内存偏移为func75中早就定义好的全局变量<code>w2c_g0</code>。</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func81.png" class="">  <img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/moutput.png" class="">  <p>更改几次输入很容易发现规律,例如:我们的输入为"123",则输出为:</p><p>$$((128*ord('1'))+ord('2'))*128+ord('3')$$</p><p>解密脚本:</p><pre class="line-numbers language-none"><code class="language-none">bigNum = int("0077678b0f3e6cf6e263e6fe3a4c39f3",16)res = []while bigNum != 0:    res.append(bigNum%128)    bigNum = bigNum &gt;&gt; 7print(''.join([chr(i) for i in res[::-1]]))<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h1 id="6-参考文章"><a href="#6-参考文章" class="headerlink" title="6. 参考文章"></a>6. 参考文章</h1><ol><li><a href="https://xz.aliyun.com/t/5170">一种Wasm逆向静态分析方法</a></li><li><a href="https://juejin.cn/post/6844904077411745800#heading-4">Wasm介绍之4：函数调用</a></li><li><a href="https://developer.mozilla.org/zh-CN/docs/WebAssembly/Understanding_the_text_format">理解WebAssembly文本格式</a></li></ol><h1 id="附件"><a href="#附件" class="headerlink" title="附件"></a>附件</h1><a href="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/calc.7z" title="calc.7z">calc.7z</a>]]></content>
+      
+      
+      <categories>
+          
+          <category> 逆向工程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> wasm </tag>
+            
+            <tag> writeup </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+  
+  
 </search>
