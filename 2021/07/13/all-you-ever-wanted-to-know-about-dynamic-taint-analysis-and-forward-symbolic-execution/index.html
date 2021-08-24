@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1. 阅读笔记 文章速览：    构建了一种新的中间语言  动态污点分析 符号执行    重要观点：  动态分析的优点 结果准确 简单,只需考虑一次执行过程中发生的事情   动态污点分析+符号执行的应用 未知漏洞挖掘 自动化过滤输入 测试用例生成 恶意代码分析     1.1. 动态污点分析 动态追踪source和sink   两个挑战:overtainted和undertainting 内容速览">
+<meta property="og:type" content="article">
+<meta property="og:title" content="All You Ever Wanted to Know about Dynamic Taint Analysis and Forward Symbolic Execution">
+<meta property="og:url" content="http://example.com/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/index.html">
+<meta property="og:site_name" content="n0rthwater">
+<meta property="og:description" content="1. 阅读笔记 文章速览：    构建了一种新的中间语言  动态污点分析 符号执行    重要观点：  动态分析的优点 结果准确 简单,只需考虑一次执行过程中发生的事情   动态污点分析+符号执行的应用 未知漏洞挖掘 自动化过滤输入 测试用例生成 恶意代码分析     1.1. 动态污点分析 动态追踪source和sink   两个挑战:overtainted和undertainting 内容速览">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/%E4%B8%89%E4%B8%AA%E6%8C%87%E6%95%B0.png">
+<meta property="article:published_time" content="2021-07-13T15:38:56.000Z">
+<meta property="article:modified_time" content="2021-07-14T08:28:01.499Z">
+<meta property="article:author" content="n0rthwater">
+<meta property="article:tag" content="符号执行">
+<meta property="article:tag" content="动态污点分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/%E4%B8%89%E4%B8%AA%E6%8C%87%E6%95%B0.png">
+
+<link rel="canonical" href="http://example.com/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>All You Ever Wanted to Know about Dynamic Taint Analysis and Forward Symbolic Execution | n0rthwater</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">n0rthwater</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">尊严只在剑锋之上，真理只在大炮射程之内</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          All You Ever Wanted to Know about Dynamic Taint Analysis and Forward Symbolic Execution
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-13 23:38:56" itemprop="dateCreated datePublished" datetime="2021-07-13T23:38:56+08:00">2021-07-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-07-14 16:28:01" itemprop="dateModified" datetime="2021-07-14T16:28:01+08:00">2021-07-14</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="1-阅读笔记"><a href="#1-阅读笔记" class="headerlink" title="1. 阅读笔记"></a>1. 阅读笔记</h1><blockquote>
+<p>文章速览：  </p>
+<ol>
+<li>构建了一种新的中间语言 </li>
+<li>动态污点分析</li>
+<li>符号执行</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>重要观点：</p>
+<ul>
+<li>动态分析的优点<ol>
+<li>结果准确</li>
+<li>简单,只需考虑一次执行过程中发生的事情</li>
+</ol>
+</li>
+<li>动态污点分析+符号执行的应用<ol>
+<li>未知漏洞挖掘</li>
+<li>自动化过滤输入</li>
+<li>测试用例生成</li>
+<li>恶意代码分析</li>
+</ol>
+</li>
+</ul>
+</blockquote>
+<h2 id="1-1-动态污点分析"><a href="#1-1-动态污点分析" class="headerlink" title="1.1. 动态污点分析"></a>1.1. 动态污点分析</h2><blockquote>
+<p>动态追踪source和sink</p>
+</blockquote>
+<ul>
+<li>两个挑战:overtainted和undertainting</li>
+<li>内容速览<ol>
+<li>如何执行动态符号执行?<ul>
+<li>根据操作语义的规则</li>
+</ul>
+</li>
+<li>污点策略<ul>
+<li>introduction</li>
+<li>transport</li>
+<li>check</li>
+</ul>
+</li>
+<li>注意事项:哪些容易产生overtainted或undertainting?<ul>
+<li>decide when to remove a taint is more difficult than when to introduce a taint</li>
+<li>undertainting ?</li>
+</ul>
+</li>
+</ol>
+</li>
+<li>重要观点: 不同目标应用的污点策略不同,但是大同小异</li>
+</ul>
+<h2 id="1-2-符号执行"><a href="#1-2-符号执行" class="headerlink" title="1.2. 符号执行"></a>1.2. 符号执行</h2><blockquote>
+<p>一个公式对应一条路径</p>
+</blockquote>
+<ul>
+<li>三个难题<ol>
+<li>Symbolic Memory<ul>
+<li>解决方案<ol>
+<li>unsound assumptions<br> 将如下代码: <pre class="line-numbers language-none"><code class="language-none">store(addr1, v)
+z = load(addr2)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+ 作如下假设: <pre class="line-numbers language-none"><code class="language-none">mem_addr1 = v
+z = mem_addr2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+ 即忽略addr1与addr2是否为别名</li>
+<li>Let subsequent analysis steps deal with them.(滞后处理,比如之后再使用SMT判断二者是否存在别名关系)</li>
+<li>别名分析</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>System calls<ul>
+<li>解决方案:副作用建模(规则?比如说使用上一次的执行结果)</li>
+</ul>
+</li>
+<li>Path Selection<br> 将路径看成树,主要是要防止循环的出现(设置执行上限)<ul>
+<li>解决方案<ol>
+<li>DFS</li>
+<li>实际执行</li>
+<li>随机路径</li>
+<li>启发式 ?</li>
+</ol>
+</li>
+</ul>
+</li>
+</ol>
+</li>
+<li>其它<ul>
+<li>符号跳转(跳转表)<ul>
+<li>解决方案<ol>
+<li>实际执行</li>
+<li>SMT</li>
+<li>Static Analysis(作者认为效果最优)</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>分析效果:三个指数     <img src="/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/%E4%B8%89%E4%B8%AA%E6%8C%87%E6%95%B0.png" class="" title="样例代码">  
+<ol>
+<li>执行时间是程序分支数目的指数级</li>
+<li>指数数量的formula</li>
+<li>指数规模的formula size:例如x→s+s+s+s....+s</li>
+</ol>
+<ul>
+<li>解决方案:<ol>
+<li>硬件加速</li>
+<li>简化约束</li>
+<li>调整符号名→unique</li>
+<li>分步求解</li>
+<li>weak precondition?</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>Mixed Execution:对于某些可信输入,不符号化</li>
+</ul>
+</li>
+</ul>
+<h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1><p>@inproceedings{schwartz2010all,<br>  title={All you ever wanted to know about dynamic taint analysis and forward symbolic execution (but might have been afraid to ask)},<br>  author={Schwartz, Edward J and Avgerinos, Thanassis and Brumley, David},<br>  booktitle={2010 IEEE symposium on Security and privacy},<br>  pages={317--331},<br>  year={2010},<br>  organization={IEEE}<br>}</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%AC%A6%E5%8F%B7%E6%89%A7%E8%A1%8C/" rel="tag"># 符号执行</a>
+              <a href="/tags/%E5%8A%A8%E6%80%81%E6%B1%A1%E7%82%B9%E5%88%86%E6%9E%90/" rel="tag"># 动态污点分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/13/klee-unassisted-and-automatic-generation-of-high-coverage-tests-for-complex-systems-programs/" rel="prev" title="KLEE: Unassisted and Automatic Generation of High-Coverage Tests for Complex Systems Programs">
+      <i class="fa fa-chevron-left"></i> KLEE: Unassisted and Automatic Generation of High-Coverage Tests for Complex Systems Programs
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/14/apex-automated-inference-of-error-specifications-for-c-apis/" rel="next" title="Apex-Automated inference of error specifications for c apis">
+      Apex-Automated inference of error specifications for c apis <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0"><span class="nav-text">1. 阅读笔记</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E5%8A%A8%E6%80%81%E6%B1%A1%E7%82%B9%E5%88%86%E6%9E%90"><span class="nav-text">1.1. 动态污点分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E7%AC%A6%E5%8F%B7%E6%89%A7%E8%A1%8C"><span class="nav-text">1.2. 符号执行</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-Cite"><span class="nav-text">2. Cite</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">n0rthwater</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/n0rthwater" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;n0rthwater" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">n0rthwater</span>
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'B646Qmi9vGiJO0WD0drOUl4t-gzGzoHsz',
+      appKey     : 'fok3WfEXmQeIkOGVzrYg4tSC',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

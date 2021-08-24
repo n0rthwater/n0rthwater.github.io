@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="BTC 区块链1.0   去中心化有什么优势？ 流通性↑    数据结构 Hash指针，其实就是用Hash值表示key  Merkle TreeEthereum 工作量证明-&gt;权益证明区块链2.0支持智能合约,以此实现一些金融衍生品可以看成，交易驱动的状态机  ETH-账户 BTC的余额在UTXO中，交易时需要证明币的来源BTC余额处理很反人类  ETH基于账户  交易时不需要证明的来源余额">
+<meta property="og:type" content="article">
+<meta property="og:title" content="区块链">
+<meta property="og:url" content="http://example.com/2021/06/28/qu-kuai-lian/index.html">
+<meta property="og:site_name" content="n0rthwater">
+<meta property="og:description" content="BTC 区块链1.0   去中心化有什么优势？ 流通性↑    数据结构 Hash指针，其实就是用Hash值表示key  Merkle TreeEthereum 工作量证明-&gt;权益证明区块链2.0支持智能合约,以此实现一些金融衍生品可以看成，交易驱动的状态机  ETH-账户 BTC的余额在UTXO中，交易时需要证明币的来源BTC余额处理很反人类  ETH基于账户  交易时不需要证明的来源余额">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2021/06/28/qu-kuai-lian/patricia_trie.png">
+<meta property="article:published_time" content="2021-06-28T09:37:51.000Z">
+<meta property="article:modified_time" content="2021-08-10T08:07:25.160Z">
+<meta property="article:author" content="n0rthwater">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2021/06/28/qu-kuai-lian/patricia_trie.png">
+
+<link rel="canonical" href="http://example.com/2021/06/28/qu-kuai-lian/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>区块链 | n0rthwater</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">n0rthwater</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">尊严只在剑锋之上，真理只在大炮射程之内</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/06/28/qu-kuai-lian/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          区块链
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-06-28 17:37:51" itemprop="dateCreated datePublished" datetime="2021-06-28T17:37:51+08:00">2021-06-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-08-10 16:07:25" itemprop="dateModified" datetime="2021-08-10T16:07:25+08:00">2021-08-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%8C%BA%E5%9D%97%E9%93%BE/" itemprop="url" rel="index"><span itemprop="name">区块链</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/06/28/qu-kuai-lian/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/06/28/qu-kuai-lian/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="BTC"><a href="#BTC" class="headerlink" title="BTC"></a>BTC</h1><blockquote>
+<p>区块链1.0</p>
+</blockquote>
+<ul>
+<li>去中心化有什么优势？<ul>
+<li>流通性↑</li>
+</ul>
+</li>
+</ul>
+<h2 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h2><blockquote>
+<p>Hash指针，其实就是用Hash值表示key</p>
+</blockquote>
+<h3 id="Merkle-Tree"><a href="#Merkle-Tree" class="headerlink" title="Merkle Tree"></a>Merkle Tree</h3><h1 id="Ethereum"><a href="#Ethereum" class="headerlink" title="Ethereum"></a>Ethereum</h1><blockquote>
+<p>工作量证明-&gt;权益证明<br>区块链2.0<br><strong>支持智能合约</strong>,以此实现一些金融衍生品<br>可以看成，交易驱动的状态机</p>
+</blockquote>
+<h2 id="ETH-账户"><a href="#ETH-账户" class="headerlink" title="ETH-账户"></a>ETH-账户</h2><blockquote>
+<p>BTC的余额在UTXO中，交易时需要证明币的来源<br>BTC余额处理很反人类</p>
+</blockquote>
+<p>ETH基于账户</p>
+<blockquote>
+<p>交易时不需要证明的来源<br>余额直接放在账户上      </p>
+</blockquote>
+<ul>
+<li>优势<ul>
+<li>天然防御double spending attack(花两次，花钱的人不诚实)<br>余额保存在账户中，花两次也钱会少两次</li>
+</ul>
+</li>
+<li>劣势</li>
+<li>讨论<ul>
+<li>篡改余额  余额由全节点维护，无法私自篡改</li>
+<li>如何防御replay attack(收两次，收钱的人不诚实)<br>交易信息中加入nonce(交易的次数，nonce值是被签名的，无法被其他人篡改)</li>
+</ul>
+</li>
+</ul>
+<h3 id="外部账户"><a href="#外部账户" class="headerlink" title="外部账户"></a>外部账户</h3><blockquote>
+<p>balance、nonce<br>可以主动发起交易</p>
+</blockquote>
+<h3 id="合约账户"><a href="#合约账户" class="headerlink" title="合约账户"></a>合约账户</h3><blockquote>
+<p>balance、nonce、code、storage<br>不能主动发起交易</p>
+</blockquote>
+<h2 id="状态树"><a href="#状态树" class="headerlink" title="状态树"></a>状态树</h2><blockquote>
+<p>地址→账户状态的映射<br>MPT(Merkle Paatricia Trie)</p>
+</blockquote>
+<h3 id="trie"><a href="#trie" class="headerlink" title="trie"></a>trie</h3><blockquote>
+<p>字典树</p>
+</blockquote>
+<ul>
+<li>优势<ul>
+<li>ETH中的查找深度都是40</li>
+<li>只要值不同，就不存在冲突</li>
+<li>不同的结点无论按照何种顺序插入，最后的结构都是相同</li>
+<li>更新操作具有良好的局部性</li>
+</ul>
+</li>
+<li>劣势<ul>
+<li>存储上存在浪费→压缩存储→Patricia trie<ul>
+<li>为什么要使用Patricia trie？<br>  以太坊中的账户非常稀疏    </li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<img src="/2021/06/28/qu-kuai-lian/patricia_trie.png" class="">
+
+<h3 id="讨论"><a href="#讨论" class="headerlink" title="讨论"></a>讨论</h3><ul>
+<li>Hash Table如何提供Merkle Proof？<ul>
+<li>数量级太大，构建merkle tree的代价太大</li>
+</ul>
+</li>
+<li>不排序的Merkle Tree是不行的</li>
+<li>排序的Merkle Tree会遇到什么问题？   <ul>
+<li>插入代价大</li>
+</ul>
+</li>
+<li>以太坊中的账户为什么要设计得很长？<ul>
+<li>避免碰撞</li>
+</ul>
+</li>
+<li>为什么要保存历史状态？<ul>
+<li>因为ETH是支持智能合约的，不像BTC可以按照交易内容很容易的推出之前的交易状态，所以，为了支持回滚，ETH需要保存历史状态。</li>
+</ul>
+</li>
+</ul>
+<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><ul>
+<li>genesis block创世纪块</li>
+</ul>
+<h2 id="交易树与收据树"><a href="#交易树与收据树" class="headerlink" title="交易树与收据树"></a>交易树与收据树</h2><blockquote>
+<p>MPT</p>
+</blockquote>
+<h3 id="bloom-filter"><a href="#bloom-filter" class="headerlink" title="bloom filter"></a>bloom filter</h3><blockquote>
+<p>digest→vec<br>no false-nagative<br>false-positive→不支持删除操作</p>
+</blockquote>
+<h3 id="讨论-1"><a href="#讨论-1" class="headerlink" title="讨论"></a>讨论</h3><ul>
+<li>为什么状态树要保存所有账户的状态？而不能只保存交易账户的状态？<ul>
+<li>查找账户状态难，如果交易中的1个账户是新建立的账户，需要一直查找到创世纪块。</li>
+</ul>
+</li>
+</ul>
+<h2 id="共识机制"><a href="#共识机制" class="headerlink" title="共识机制"></a>共识机制</h2><blockquote>
+<p>GHOST协议<br>Centralization bias<br>uncle block，包含叔父区块可以得到额外的出块奖励，叔父区块自身页可以拿到出块奖励</p>
+</blockquote>
+<h3 id="讨论-2"><a href="#讨论-2" class="headerlink" title="讨论"></a>讨论</h3><ul>
+<li>叔父区块过多怎么办？</li>
+<li>故意不包含某些叔父区块？<ul>
+<li>损人不利己，但是自己损失较小</li>
+<li>解决方法：叔父的辈分不仅仅只有一代</li>
+</ul>
+</li>
+</ul>
+<h2 id="挖矿算法"><a href="#挖矿算法" class="headerlink" title="挖矿算法"></a>挖矿算法</h2><h3 id="难度调整"><a href="#难度调整" class="headerlink" title="难度调整"></a>难度调整</h3><h4 id="难度炸弹"><a href="#难度炸弹" class="headerlink" title="难度炸弹"></a>难度炸弹</h4><h2 id="权益证明"><a href="#权益证明" class="headerlink" title="权益证明"></a>权益证明</h2><blockquote>
+<p>工作量证明造成资源浪费？</p>
+</blockquote>
+<h2 id="智能合约"><a href="#智能合约" class="headerlink" title="智能合约"></a>智能合约</h2><blockquote>
+<p>去中心化的合同<br>solidity</p>
+</blockquote>
+<p>以太坊中只有外部账户能发起交易，合约交易不能主动发起交易</p>
+<blockquote>
+<p>合约的调用方法：</p>
+<ol>
+<li>间接调用：call和delegatecall(在当前合约环境下执行)</li>
+<li>直接调用</li>
+</ol>
+</blockquote>
+<h3 id="gas-fee"><a href="#gas-fee" class="headerlink" title="gas fee"></a>gas fee</h3><p>以太坊中的交易具有原子性，要么完全执行，要么完全不执行。<br>执行失败以后，状态回滚，但是gas fee不退。(防止DOS)</p>
+<h3 id="错误处理"><a href="#错误处理" class="headerlink" title="错误处理"></a>错误处理</h3><h3 id="TheDAO"><a href="#TheDAO" class="headerlink" title="TheDAO"></a>TheDAO</h3><p>重入攻击：同一部分代码被反复执行？</p>
+<h3 id="Beauty-Chain"><a href="#Beauty-Chain" class="headerlink" title="Beauty Chain"></a>Beauty Chain</h3><h2 id="反思"><a href="#反思" class="headerlink" title="反思"></a>反思</h2><ul>
+<li>智能合约真的智能嘛？<ul>
+<li>smart contract is anything but smart</li>
+</ul>
+</li>
+<li>不可篡改性其实是1个双刃剑</li>
+<li>Nothing is irrevocable.</li>
+<li>solidity 这个语言是否有问题？ <ul>
+<li>解决思路:模板</li>
+</ul>
+</li>
+<li>去中心化意味着什么？<ul>
+<li>分叉是民主的体现</li>
+</ul>
+</li>
+<li>去中心化≠分布式<h3 id="讨论-3"><a href="#讨论-3" class="headerlink" title="讨论"></a>讨论</h3></li>
+<li>全节点先挖矿还是先执行合约？<ul>
+<li>执行过程中状态变化都在本地(本地维护了1个状态树)，执行完以后发布才达成共识</li>
+<li>必须先执行，因为blocker header中包含三棵树的根hash值，而挖矿的nonce是要根据blocker header来计算的，所以要先执行合约再挖矿</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/06/16/unicorn/" rel="prev" title="unicorn">
+      <i class="fa fa-chevron-left"></i> unicorn
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/02/python/" rel="next" title="python">
+      python <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#BTC"><span class="nav-text">BTC</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-text">数据结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Merkle-Tree"><span class="nav-text">Merkle Tree</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Ethereum"><span class="nav-text">Ethereum</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ETH-%E8%B4%A6%E6%88%B7"><span class="nav-text">ETH-账户</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E9%83%A8%E8%B4%A6%E6%88%B7"><span class="nav-text">外部账户</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%88%E7%BA%A6%E8%B4%A6%E6%88%B7"><span class="nav-text">合约账户</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8A%B6%E6%80%81%E6%A0%91"><span class="nav-text">状态树</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#trie"><span class="nav-text">trie</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A8%E8%AE%BA"><span class="nav-text">讨论</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A1%A5%E5%85%85"><span class="nav-text">补充</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%A4%E6%98%93%E6%A0%91%E4%B8%8E%E6%94%B6%E6%8D%AE%E6%A0%91"><span class="nav-text">交易树与收据树</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#bloom-filter"><span class="nav-text">bloom filter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A8%E8%AE%BA-1"><span class="nav-text">讨论</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B1%E8%AF%86%E6%9C%BA%E5%88%B6"><span class="nav-text">共识机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A8%E8%AE%BA-2"><span class="nav-text">讨论</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%96%E7%9F%BF%E7%AE%97%E6%B3%95"><span class="nav-text">挖矿算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9A%BE%E5%BA%A6%E8%B0%83%E6%95%B4"><span class="nav-text">难度调整</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%9A%BE%E5%BA%A6%E7%82%B8%E5%BC%B9"><span class="nav-text">难度炸弹</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%83%E7%9B%8A%E8%AF%81%E6%98%8E"><span class="nav-text">权益证明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%99%BA%E8%83%BD%E5%90%88%E7%BA%A6"><span class="nav-text">智能合约</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#gas-fee"><span class="nav-text">gas fee</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86"><span class="nav-text">错误处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TheDAO"><span class="nav-text">TheDAO</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Beauty-Chain"><span class="nav-text">Beauty Chain</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8D%E6%80%9D"><span class="nav-text">反思</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A8%E8%AE%BA-3"><span class="nav-text">讨论</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">n0rthwater</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/n0rthwater" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;n0rthwater" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">n0rthwater</span>
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'B646Qmi9vGiJO0WD0drOUl4t-gzGzoHsz',
+      appKey     : 'fok3WfEXmQeIkOGVzrYg4tSC',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
