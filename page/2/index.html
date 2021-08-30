@@ -196,6 +196,219 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/08/01/losing-control-on-the-effectiveness-of-control-flow-integrity-under-stack-attacks/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/08/01/losing-control-on-the-effectiveness-of-control-flow-integrity-under-stack-attacks/" class="post-title-link" itemprop="url">Losing Control: On the Effectiveness of Control- Flow Integrity Under Stack Attacks</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-01 00:33:02 / 修改时间：11:13:30" itemprop="dateCreated datePublished" datetime="2021-08-01T00:33:02+08:00">2021-08-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/01/losing-control-on-the-effectiveness-of-control-flow-integrity-under-stack-attacks/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/01/losing-control-on-the-effectiveness-of-control-flow-integrity-under-stack-attacks/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="阅读记录"><a href="#阅读记录" class="headerlink" title="阅读记录"></a>阅读记录</h1><blockquote>
+<p>文章速览: 本篇文章主要针对IFCC</p>
+</blockquote>
+<h2 id="结论与观点"><a href="#结论与观点" class="headerlink" title="结论与观点"></a>结论与观点</h2><ul>
+<li>永不信任可写区域的内存？那代码动态产生怎么办？代码的灵活性会大大降低。不太现实...</li>
+</ul>
+<pre class="line-numbers language-none"><code class="language-none">Since DEP prevents code injection, code reuse has become
+a key technique in modern exploits that bypass all
+current mitigations.
+DEP的出现使得代码复用技术成为了攻击的关键技术<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">CPI protects code
+pointers from being overwritten, and randomization hides
+the code layout.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">IFCC and VTV [50], are vulnerable to this kind of attack.
+这类attack指的是修改callee-saved-reg值的attack<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">攻击影子堆栈的思路：覆盖syscall的返回值，关键系统调用：sysenter
+原因:kernel mode下，函数返回不会被检查<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h2 id="问题与讨论"><a href="#问题与讨论" class="headerlink" title="问题与讨论"></a>问题与讨论</h2><ul>
+<li>CFI在保护的同时会造成其它信息的泄露？<ul>
+<li>不会，但是CFI会用到某些callee saved registers，并且它们会被存放到栈上，从而被泄露</li>
+</ul>
+</li>
+<li>what is COOP?</li>
+<li>What is TLS？</li>
+<li>Isolation-based Defenses</li>
+</ul>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{conti2015losing,<br>  title={Losing control: On the effectiveness of control-flow integrity under stack attacks},<br>  author={Conti, Mauro and Crane, Stephen and Davi, Lucas and Franz, Michael and Larsen, Per and Negro, Marco and Liebchen, Christopher and Qunaibit, Mohaned and Sadeghi, Ahmad-Reza},<br>  booktitle={Proceedings of the 22nd ACM SIGSAC Conference on Computer and Communications Security},<br>  pages={952--963},<br>  year={2015}<br>}</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/30/control-flow-bending-on-the-effectiveness-of-control-flow-integrity/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/07/30/control-flow-bending-on-the-effectiveness-of-control-flow-integrity/" class="post-title-link" itemprop="url">Control-Flow Bending: On the Effectiveness of Control-Flow Integrity</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-07-30 18:22:31 / 修改时间：21:55:58" itemprop="dateCreated datePublished" datetime="2021-07-30T18:22:31+08:00">2021-07-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/07/30/control-flow-bending-on-the-effectiveness-of-control-flow-integrity/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/07/30/control-flow-bending-on-the-effectiveness-of-control-flow-integrity/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><h2 id="引用和知识"><a href="#引用和知识" class="headerlink" title="引用和知识"></a>引用和知识</h2><pre class="line-numbers language-none"><code class="language-none">CFI,in it's best form,can not stop all attacks.<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">When no shadow stack is in place, dispatcher functions allow powerful attacks. Consequently
+CFI without return instruction integrity is not secure<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h2 id="思考与讨论"><a href="#思考与讨论" class="headerlink" title="思考与讨论"></a>思考与讨论</h2><ul>
+<li>能否在每次压入返回地址的时候对返回地址进行保护？<ul>
+<li>目前的保护方式有canary和shadow stack</li>
+<li>比如说以某个值为key，然后对return address进行加密，存放再canary的地方<ul>
+<li>缺陷：执行效率比较慢，每次函数返回都要进行两次加密计算→挑选合适的加密算法</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><pre class="line-numbers language-none"><code class="language-none">@inproceedings{carlini2015control,
+  title={Control-flow bending: On the effectiveness of control-flow integrity},
+  author={Carlini, Nicholas and Barresi, Antonio and Payer, Mathias and Wagner, David and Gross, Thomas R},
+  booktitle={24th $\{$USENIX$\}$ Security Symposium ($\{$USENIX$\}$ Security 15)},
+  pages={161--176},
+  year={2015}
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/30/control-flow-integrity-for-cots-binaries/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1068,184 +1281,6 @@ information in the binary<span aria-hidden="true" class="line-numbers-rows"><spa
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/16/chopped-symbolic-execution/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="n0rthwater">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="n0rthwater">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/07/16/chopped-symbolic-execution/" class="post-title-link" itemprop="url">Chopped Symbolic Execution</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-07-16 19:40:59 / 修改时间：20:36:20" itemprop="dateCreated datePublished" datetime="2021-07-16T19:40:59+08:00">2021-07-16</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/07/16/chopped-symbolic-execution/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/07/16/chopped-symbolic-execution/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{trabish2018chopped,<br>  title={Chopped symbolic execution},<br>  author={Trabish, David and Mattavelli, Andrea and Rinetzky, Noam and Cadar, Cristian},<br>  booktitle={Proceedings of the 40th International Conference on Software Engineering},<br>  pages={350--360},<br>  year={2018}<br>}</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/16/apisan-sanitizing-api-usages-through-semantic-cross-checking/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="n0rthwater">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="n0rthwater">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/07/16/apisan-sanitizing-api-usages-through-semantic-cross-checking/" class="post-title-link" itemprop="url">APISan: Sanitizing API Usages through Semantic Cross-checking</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-07-16 16:41:29 / 修改时间：17:06:36" itemprop="dateCreated datePublished" datetime="2021-07-16T16:41:29+08:00">2021-07-16</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/07/16/apisan-sanitizing-api-usages-through-semantic-cross-checking/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/07/16/apisan-sanitizing-api-usages-through-semantic-cross-checking/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="阅读笔记"><a href="#阅读笔记" class="headerlink" title="阅读笔记"></a>阅读笔记</h1><p>文章速览：</p>
-<ol>
-<li>主要思路：学习已有的API使用模式，检测使用不当的API</li>
-<li>缺陷：neither sound nor complete</li>
-</ol>
-<h2 id="Design"><a href="#Design" class="headerlink" title="Design"></a>Design</h2><ul>
-<li>四种API上下文模式<ol>
-<li>Return：返回值不仅仅返回计算结果，也可能表示当前的运算状态</li>
-<li>Argument：函数的参数之间可能存在某种运算关系，例如memory copy 的size应该小于buffer的size</li>
-<li>Causality：两个API之间可能存在因果关系，例如在请求锁之前应该释放锁</li>
-<li>Conditions：条件关系，例如要验证一个账号的合法性，首先该账号得存在</li>
-</ol>
-</li>
-</ul>
-<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{yun2016apisan,<br>  title={Apisan: Sanitizing ${$API$}$ usages through semantic cross-checking},<br>  author={Yun, Insu and Min, Changwoo and Si, Xujie and Jang, Yeongjin and Kim, Taesoo and Naik, Mayur},<br>  booktitle={25th ${$USENIX$}$ Security Symposium (${$USENIX$}$ Security 16)},<br>  pages={363--378},<br>  year={2016}<br>}</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1315,20 +1350,20 @@ information in the binary<span aria-hidden="true" class="line-numbers-rows"><spa
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-count">40</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">19</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-count">23</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

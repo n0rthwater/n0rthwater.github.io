@@ -1793,7 +1793,11 @@ print(shellcode)<span aria-hidden="true" class="line-numbers-rows"><span></span>
 <img src="/2021/08/13/ji-qi-xue-xi/%E4%BB%A3%E4%BB%B7%E5%87%BD%E6%95%B02.png" class="">   
 <p>图中的λ称为正则化参数。<br>为什么能起到缩小所有参数的作用？<br>引入的式子是二次项。加入任意1个参数θ<sub>i</sub>变大为θ<sub>i</sub>'，都会有J(θ<sub>1</sub>,θ<sub>2</sub>,...,θ<sub>i</sub>,...) &lt;= J(θ<sub>1</sub>,θ<sub>2</sub>,...,θ<sub>i</sub>',...)<br>所谓调参，其实就是调整λ的值</p>
 <h1 id="神经网络"><a href="#神经网络" class="headerlink" title="神经网络"></a>神经网络</h1><p>神经元模型    </p>
-<img src="/2021/08/13/ji-qi-xue-xi/%E7%A5%9E%E7%BB%8F%E5%85%83%E6%A8%A1%E5%9E%8B.png" class="">]]></content>
+<img src="/2021/08/13/ji-qi-xue-xi/%E7%A5%9E%E7%BB%8F%E5%85%83%E6%A8%A1%E5%9E%8B.png" class="">
+<img src="/2021/08/13/ji-qi-xue-xi/%E7%A5%9E%E7%BB%8F%E5%85%83%E6%A8%A1%E5%9E%8B2.png" class="">
+
+<p>例子    </p>
+<img src="/2021/08/13/ji-qi-xue-xi/%E7%A5%9E%E7%BB%8F%E5%85%83%E6%A8%A1%E5%9E%8B-%E4%BE%8B%E5%AD%90.png" class="">]]></content>
       <categories>
         <category>机器学习</category>
       </categories>
@@ -1925,5 +1929,141 @@ chkconfig [service] on/off<span aria-hidden="true" class="line-numbers-rows"><sp
 </ol>
 <h1 id="硬盘"><a href="#硬盘" class="headerlink" title="硬盘"></a>硬盘</h1><h2 id="硬盘扩容"><a href="#硬盘扩容" class="headerlink" title="硬盘扩容"></a>硬盘扩容</h2><p>ubuntu硬盘扩容：gparted一键扩容</p>
 ]]></content>
+  </entry>
+  <entry>
+    <title>Process &amp; Thread</title>
+    <url>/2021/08/24/process-thread/</url>
+    <content><![CDATA[<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><p>进程是正在运行的程序实体，是资源分配的基本单位。</p>
+<p>线程是轻量级的进程，是独立调度的基本单位。设置线程，主要目的是提高程序的并行性。</p>
+<h1 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h1><ol>
+<li><p>资源方面</p>
+<ol>
+<li><p>线程的共享资源</p>
+<p> 线程之间资源共享，比如代码段、数据段、打开文件表等。</p>
+</li>
+<li><p>线程的独享资源<br> 但是线程也有独享资源，比如栈、寄存器等。</p>
+<ul>
+<li><p>寄存器：不同CPU各自拥有各自的寄存器</p>
+</li>
+<li><p>线程栈：线程栈均分配在共享的虚拟地址空间中，线程可以通过暴露栈地址的方式让它的Peer Thread访问其栈空间。</p>
+<p>  为什么线程的栈是独享的？<br>  因为每个线程给自拥有自己的代码，在运行过程中会涉及到一些栈操作，所以要分开。</p>
+<p>  关于线程栈的大小，linux在创建线程的时候默认线程栈的大小为8M，可以主动设置。  </p>
+<p>  <strong>那么线程拥有各自的堆嘛？</strong></p>
+</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><p>Context Switch</p>
+<p> 在上下文切换时，进程的消耗高于线程的消耗。其主要原因如下：</p>
+<ol>
+<li>进程需要保存的数据更多，例如PCB</li>
+<li>进程的上下文切换涉及到虚拟地址空间上，诸如代码段、数据段的切换，而线程不需要</li>
+<li>因为虚拟地址空间的切换，cache和TLB也会失效，需要更新(复习有关cache和tlb的知识)</li>
+</ol>
+</li>
+<li><p>一个线程阻塞以后，它的Peer Thread都会阻塞，即整个进程阻塞。    </p>
+<p> 从OS层面，OS只和进程打交道。当一个线程因为IO等原因阻塞以后，OS会将整个进程阻塞掉。    </p>
+<p> 当然，对于多核处理器而言，一个线程的阻塞不会影响另一个处理器中它Peer Thread的运行。</p>
+</li>
+</ol>
+<h1 id="Windows中的数据结构"><a href="#Windows中的数据结构" class="headerlink" title="Windows中的数据结构"></a>Windows中的数据结构</h1><h1 id="Linux中的进程与线程"><a href="#Linux中的进程与线程" class="headerlink" title="Linux中的进程与线程"></a>Linux中的进程与线程</h1><h2 id="Linux中的进程"><a href="#Linux中的进程" class="headerlink" title="Linux中的进程"></a>Linux中的进程</h2><p>进程描述符task_struct</p>
+<p>Linux中进程的创建过程：<br>创建进程描述符→申请内存空间→设置进程状态、将其加入调度序列</p>
+<h3 id="COW-写时复制"><a href="#COW-写时复制" class="headerlink" title="COW(写时复制)"></a>COW(写时复制)</h3><p>Linux父进程在创建子进程的时候，子进程最初复用父进程的地址空间。只有当内存页发生变化的时候，才会重新申请一块内存页。fork()的子进程的堆栈指向父进程的堆栈。</p>
+<h3 id="Linux进程树"><a href="#Linux进程树" class="headerlink" title="Linux进程树"></a>Linux进程树</h3><p>init进程：在内核启动的最后阶段，会创建init进程，它的进程id为1(Linux最大进程号为32767)</p>
+<p>init进程有3个特点：</p>
+<ol>
+<li>无默认的信号处理程序</li>
+<li>收养孤儿进程</li>
+<li>init进程死亡，则所有进程被杀死</li>
+</ol>
+<h3 id="通信"><a href="#通信" class="headerlink" title="通信"></a>通信</h3><p>通信方式：</p>
+<ol>
+<li>OS：信号量、共享内存、pipe</li>
+<li>文件：UNIX域套接字、文件</li>
+<li>网络：socket套接字</li>
+</ol>
+<p>pipe：<br>一种基础的IPC(Inter-Process Communication)机制。</p>
+<ol>
+<li>在Linux中，其本质是内核的缓冲区，一种伪文件。</li>
+<li>在管道创建的时候，会生成两个文件描述符，一为只读端，一为只写端。（不能同时读和同时写，也不能重复读；半双工通信？）</li>
+</ol>
+<p>管道的分类：无名管道和有名管道(存在于文件系统中，mkfifo)</p>
+<p>管道的局限性：<br>只能在拥有公共祖先的进程之间使用管道？<br>因为管道只存在于内存中。</p>
+<p>常见的通信方式有：单工通信(数据流向为单向)、半双工通信(数据流向为双向，但是双方不可同时)、全双工通信(双向，同时)</p>
+<h3 id="信号处理"><a href="#信号处理" class="headerlink" title="信号处理"></a>信号处理</h3><p>信号处理一般发生在进程从内核态返回用户态的时候，此时内核会查看进程的信号队列，然后执行信号处理程序？</p>
+<h3 id="后台进程与守护进程"><a href="#后台进程与守护进程" class="headerlink" title="后台进程与守护进程"></a>后台进程与守护进程</h3><p>后台进程与终端绑定，shell退出它也退出，<br>守护进程与终端脱离，shell推出它不退出。</p>
+<p>进程→进程组→会话<br>一个进程组由多个进程构成，一个会话由多个进程组构成</p>
+<p>如何实现一个守护进程？nohup</p>
+<h3 id="进程调度"><a href="#进程调度" class="headerlink" title="进程调度"></a>进程调度</h3><p>进程状态：</p>
+<ol>
+<li>Running：就绪态和运行态</li>
+<li>深度睡眠(<strong>忽略信号</strong>)和浅度睡眠：阻塞态</li>
+<li>Zombie：僵死进程，内核中的垃圾进程，但是父进程未wait()，资源还没有回收</li>
+<li>Dead：顾名思义</li>
+<li>Stop：一般被调试的进程处于这个状态</li>
+<li>Trace：被监视的进程处于这个状态</li>
+</ol>
+<p>首先，调度模式有两种分别为：preemptive(抢占式)和cooperative(非抢占式)</p>
+<p>程序可以分为IO繁忙型和CPU繁忙型。<br>IO繁忙型比如：网络、键盘、GUI程序</p>
+<p>Linux有很多调度算法，最新的是CFS。<br>其大致思想为以优先级为权重，为每个进程记录虚拟运行时间vruntime，优先级大的vruntime增长慢，CFS总是选择vruntime最小的进程优先调度。<br>它使用红黑树维护调度实体(sched_entity存放在task_struct中)</p>
+<p>进程转入sleep状态会做的事情：</p>
+<ol>
+<li>将自身标记为sleep状态</li>
+<li>移出就绪队列(runqueue)，加入waitqueue</li>
+<li>触发schedule函数，调度其它进程</li>
+</ol>
+<h2 id="Linux中的线程"><a href="#Linux中的线程" class="headerlink" title="Linux中的线程"></a>Linux中的线程</h2><p>Linux没有单独的线程概念，实际上Linux中的线程就是一个普通的进程，只是它可能与其它进程共享某些资源，如地址空间。</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li><a href="https://blog.csdn.net/XD_hebuters/article/details/79623130">CFS调度算法</a></li>
+<li><a href="https://notes.eddyerburgh.me/operating-systems/linux/process-scheduling">Linux进程调度算法</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>计算机基础知识</category>
+      </categories>
+      <tags>
+        <tag>进程</tag>
+        <tag>线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>红黑树</title>
+    <url>/2021/08/30/hong-hei-shu/</url>
+    <content><![CDATA[<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>红黑树是一棵二叉查找树。</p>
+<p>它有以下性质：</p>
+<ol>
+<li>只有红黑两个颜色的节点</li>
+<li>根节点是黑色的</li>
+<li>红色节点的两个子节点一定是黑色节点</li>
+<li>任意一个节点到所有叶子节点的路径上的黑色节点数量一致</li>
+<li>所有的叶子节点都是黑色的节点</li>
+</ol>
+<p>数据结构：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">struct t_red_black_node {
+    enum { red, black } colour;
+    void *item;
+    struct t_red_black_node *left,
+                     *right,
+                     *parent;
+    }<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="算法复杂度分析"><a href="#算法复杂度分析" class="headerlink" title="算法复杂度分析"></a>算法复杂度分析</h2><h3 id="红黑树的最大高度是2lg-n-1-其中n表示红黑树的内部节点数量。"><a href="#红黑树的最大高度是2lg-n-1-其中n表示红黑树的内部节点数量。" class="headerlink" title="红黑树的最大高度是2lg(n+1),其中n表示红黑树的内部节点数量。"></a>红黑树的最大高度是2lg(n+1),其中n表示红黑树的内部节点数量。</h3><p>概念介绍：black-height<br>对于任意节点x，它到叶子节点的路径上的黑色节点的数量称为它的black-height，bh(x)。</p>
+<p>引理1：对于高度为h，根节点为t的红黑树，它的内部节点数量至少为2<sup>bh(t)</sup>-1个。</p>
+<p>直观理解：在bh(t)已知的情况下，怎样让树中的节点最少？即树中没有红色的节点，那么该树是一棵只有黑色节点的满二叉树，它的节点数量为2<sup>bh(t)</sup>-1个。</p>
+<p>数学归纳法证明：</p>
+<ol>
+<li>当节点x为叶子节点时，即h=0，bh(x)=0，其内部节点的数量为0&gt;=2<sup>bh(x)</sup>-1=0，原命题成立;</li>
+<li>当节点x的高度为h-1的时候，假设该命题仍然成立;</li>
+<li>当节点x的高度为h的时候，它的左右子树的black-height为bh(x)或bh(x)-1，所以它的左右子树的节点数量至少为2<sup>bh(x)-1</sup>-1，所以它的节点数量至少为(2<sup>bh(x)-1</sup>-1 + 2<sup>bh(x)-1</sup>-1)+1 = 2<sup>bh(x)</sup>-1，证毕。</li>
+</ol>
+<h2 id="红黑树的操作"><a href="#红黑树的操作" class="headerlink" title="红黑树的操作"></a>红黑树的操作</h2><p>略，太复杂了，以后有时间再说。。。</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li><a href="https://www.cs.auckland.ac.nz/software/AlgAnim/red_black.html">https://www.cs.auckland.ac.nz/software/AlgAnim/red_black.html</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>算法与数据结构</category>
+      </categories>
   </entry>
 </search>

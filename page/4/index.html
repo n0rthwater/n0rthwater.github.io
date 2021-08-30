@@ -196,6 +196,347 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/02/python/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/07/02/python/" class="post-title-link" itemprop="url">python</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-02 16:44:35" itemprop="dateCreated datePublished" datetime="2021-07-02T16:44:35+08:00">2021-07-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-08-20 20:33:40" itemprop="dateModified" datetime="2021-08-20T20:33:40+08:00">2021-08-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/" itemprop="url" rel="index"><span itemprop="name">编程语言</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/07/02/python/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/07/02/python/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="networkx"><a href="#networkx" class="headerlink" title="networkx"></a>networkx</h1><h2 id="边"><a href="#边" class="headerlink" title="边"></a>边</h2><h3 id="属性"><a href="#属性" class="headerlink" title="属性"></a>属性</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># 建立一条结点A到结点B的边，其对应属性attr1的值为val1，对应属性attr2的值为val2</span>
+G<span class="token punctuation">.</span>add_edges_from<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token string">"A"</span><span class="token punctuation">,</span> <span class="token string">"B"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">"attr1"</span><span class="token punctuation">:</span>val1<span class="token punctuation">,</span><span class="token string">"attr2"</span><span class="token punctuation">:</span>val2<span class="token punctuation">}</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token comment"># 获取属性值</span>
+G<span class="token punctuation">[</span><span class="token string">"A"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"B"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"attr1"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="边是否存在"><a href="#边是否存在" class="headerlink" title="边是否存在"></a>边是否存在</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python">G<span class="token punctuation">.</span>has_edge<span class="token punctuation">(</span>node1<span class="token punctuation">,</span>node2<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+
+<h1 id="pandas"><a href="#pandas" class="headerlink" title="pandas"></a>pandas</h1><h2 id="创建DataFrame"><a href="#创建DataFrame" class="headerlink" title="创建DataFrame"></a>创建DataFrame</h2><ul>
+<li>columns为列名，按行赋值   <img src="/2021/07/02/python/pandas%E5%88%9B%E5%BB%BADataFrame(3).png" class=""></li>
+</ul>
+<h2 id="读取数据"><a href="#读取数据" class="headerlink" title="读取数据"></a>读取数据</h2><ul>
+<li>csv<pre class="line-numbers language-none"><code class="language-none">read_csv(filename)<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+</ul>
+<h2 id="写入数据"><a href="#写入数据" class="headerlink" title="写入数据"></a>写入数据</h2><ul>
+<li>csv  <pre class="line-numbers language-python" data-language="python"><code class="language-python">wine_reviews<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>to_csv<span class="token punctuation">(</span><span class="token string">"wine_reviews.csv"</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+</ul>
+<h2 id="修改"><a href="#修改" class="headerlink" title="修改"></a>修改</h2><ul>
+<li>改数值<img src="/2021/07/02/python/pandas_DataFrame%E6%94%B9%E6%95%B0%E5%80%BC.png" class=""></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/06/28/qu-kuai-lian/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/06/28/qu-kuai-lian/" class="post-title-link" itemprop="url">区块链</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-06-28 17:37:51" itemprop="dateCreated datePublished" datetime="2021-06-28T17:37:51+08:00">2021-06-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-08-10 16:07:25" itemprop="dateModified" datetime="2021-08-10T16:07:25+08:00">2021-08-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%8C%BA%E5%9D%97%E9%93%BE/" itemprop="url" rel="index"><span itemprop="name">区块链</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/06/28/qu-kuai-lian/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/06/28/qu-kuai-lian/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="BTC"><a href="#BTC" class="headerlink" title="BTC"></a>BTC</h1><blockquote>
+<p>区块链1.0</p>
+</blockquote>
+<ul>
+<li>去中心化有什么优势？<ul>
+<li>流通性↑</li>
+</ul>
+</li>
+</ul>
+<h2 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h2><blockquote>
+<p>Hash指针，其实就是用Hash值表示key</p>
+</blockquote>
+<h3 id="Merkle-Tree"><a href="#Merkle-Tree" class="headerlink" title="Merkle Tree"></a>Merkle Tree</h3><h1 id="Ethereum"><a href="#Ethereum" class="headerlink" title="Ethereum"></a>Ethereum</h1><blockquote>
+<p>工作量证明-&gt;权益证明<br>区块链2.0<br><strong>支持智能合约</strong>,以此实现一些金融衍生品<br>可以看成，交易驱动的状态机</p>
+</blockquote>
+<h2 id="ETH-账户"><a href="#ETH-账户" class="headerlink" title="ETH-账户"></a>ETH-账户</h2><blockquote>
+<p>BTC的余额在UTXO中，交易时需要证明币的来源<br>BTC余额处理很反人类</p>
+</blockquote>
+<p>ETH基于账户</p>
+<blockquote>
+<p>交易时不需要证明的来源<br>余额直接放在账户上      </p>
+</blockquote>
+<ul>
+<li>优势<ul>
+<li>天然防御double spending attack(花两次，花钱的人不诚实)<br>余额保存在账户中，花两次也钱会少两次</li>
+</ul>
+</li>
+<li>劣势</li>
+<li>讨论<ul>
+<li>篡改余额  余额由全节点维护，无法私自篡改</li>
+<li>如何防御replay attack(收两次，收钱的人不诚实)<br>交易信息中加入nonce(交易的次数，nonce值是被签名的，无法被其他人篡改)</li>
+</ul>
+</li>
+</ul>
+<h3 id="外部账户"><a href="#外部账户" class="headerlink" title="外部账户"></a>外部账户</h3><blockquote>
+<p>balance、nonce<br>可以主动发起交易</p>
+</blockquote>
+<h3 id="合约账户"><a href="#合约账户" class="headerlink" title="合约账户"></a>合约账户</h3><blockquote>
+<p>balance、nonce、code、storage<br>不能主动发起交易</p>
+</blockquote>
+<h2 id="状态树"><a href="#状态树" class="headerlink" title="状态树"></a>状态树</h2><blockquote>
+<p>地址→账户状态的映射<br>MPT(Merkle Paatricia Trie)</p>
+</blockquote>
+<h3 id="trie"><a href="#trie" class="headerlink" title="trie"></a>trie</h3><blockquote>
+<p>字典树</p>
+</blockquote>
+<ul>
+<li>优势<ul>
+<li>ETH中的查找深度都是40</li>
+<li>只要值不同，就不存在冲突</li>
+<li>不同的结点无论按照何种顺序插入，最后的结构都是相同</li>
+<li>更新操作具有良好的局部性</li>
+</ul>
+</li>
+<li>劣势<ul>
+<li>存储上存在浪费→压缩存储→Patricia trie<ul>
+<li>为什么要使用Patricia trie？<br>  以太坊中的账户非常稀疏    </li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<img src="/2021/06/28/qu-kuai-lian/patricia_trie.png" class="">
+
+<h3 id="讨论"><a href="#讨论" class="headerlink" title="讨论"></a>讨论</h3><ul>
+<li>Hash Table如何提供Merkle Proof？<ul>
+<li>数量级太大，构建merkle tree的代价太大</li>
+</ul>
+</li>
+<li>不排序的Merkle Tree是不行的</li>
+<li>排序的Merkle Tree会遇到什么问题？   <ul>
+<li>插入代价大</li>
+</ul>
+</li>
+<li>以太坊中的账户为什么要设计得很长？<ul>
+<li>避免碰撞</li>
+</ul>
+</li>
+<li>为什么要保存历史状态？<ul>
+<li>因为ETH是支持智能合约的，不像BTC可以按照交易内容很容易的推出之前的交易状态，所以，为了支持回滚，ETH需要保存历史状态。</li>
+</ul>
+</li>
+</ul>
+<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><ul>
+<li>genesis block创世纪块</li>
+</ul>
+<h2 id="交易树与收据树"><a href="#交易树与收据树" class="headerlink" title="交易树与收据树"></a>交易树与收据树</h2><blockquote>
+<p>MPT</p>
+</blockquote>
+<h3 id="bloom-filter"><a href="#bloom-filter" class="headerlink" title="bloom filter"></a>bloom filter</h3><blockquote>
+<p>digest→vec<br>no false-nagative<br>false-positive→不支持删除操作</p>
+</blockquote>
+<h3 id="讨论-1"><a href="#讨论-1" class="headerlink" title="讨论"></a>讨论</h3><ul>
+<li>为什么状态树要保存所有账户的状态？而不能只保存交易账户的状态？<ul>
+<li>查找账户状态难，如果交易中的1个账户是新建立的账户，需要一直查找到创世纪块。</li>
+</ul>
+</li>
+</ul>
+<h2 id="共识机制"><a href="#共识机制" class="headerlink" title="共识机制"></a>共识机制</h2><blockquote>
+<p>GHOST协议<br>Centralization bias<br>uncle block，包含叔父区块可以得到额外的出块奖励，叔父区块自身页可以拿到出块奖励</p>
+</blockquote>
+<h3 id="讨论-2"><a href="#讨论-2" class="headerlink" title="讨论"></a>讨论</h3><ul>
+<li>叔父区块过多怎么办？</li>
+<li>故意不包含某些叔父区块？<ul>
+<li>损人不利己，但是自己损失较小</li>
+<li>解决方法：叔父的辈分不仅仅只有一代</li>
+</ul>
+</li>
+</ul>
+<h2 id="挖矿算法"><a href="#挖矿算法" class="headerlink" title="挖矿算法"></a>挖矿算法</h2><h3 id="难度调整"><a href="#难度调整" class="headerlink" title="难度调整"></a>难度调整</h3><h4 id="难度炸弹"><a href="#难度炸弹" class="headerlink" title="难度炸弹"></a>难度炸弹</h4><h2 id="权益证明"><a href="#权益证明" class="headerlink" title="权益证明"></a>权益证明</h2><blockquote>
+<p>工作量证明造成资源浪费？</p>
+</blockquote>
+<h2 id="智能合约"><a href="#智能合约" class="headerlink" title="智能合约"></a>智能合约</h2><blockquote>
+<p>去中心化的合同<br>solidity</p>
+</blockquote>
+<p>以太坊中只有外部账户能发起交易，合约交易不能主动发起交易</p>
+<blockquote>
+<p>合约的调用方法：</p>
+<ol>
+<li>间接调用：call和delegatecall(在当前合约环境下执行)</li>
+<li>直接调用</li>
+</ol>
+</blockquote>
+<h3 id="gas-fee"><a href="#gas-fee" class="headerlink" title="gas fee"></a>gas fee</h3><p>以太坊中的交易具有原子性，要么完全执行，要么完全不执行。<br>执行失败以后，状态回滚，但是gas fee不退。(防止DOS)</p>
+<h3 id="错误处理"><a href="#错误处理" class="headerlink" title="错误处理"></a>错误处理</h3><h3 id="TheDAO"><a href="#TheDAO" class="headerlink" title="TheDAO"></a>TheDAO</h3><p>重入攻击：同一部分代码被反复执行？</p>
+<h3 id="Beauty-Chain"><a href="#Beauty-Chain" class="headerlink" title="Beauty Chain"></a>Beauty Chain</h3><h2 id="反思"><a href="#反思" class="headerlink" title="反思"></a>反思</h2><ul>
+<li>智能合约真的智能嘛？<ul>
+<li>smart contract is anything but smart</li>
+</ul>
+</li>
+<li>不可篡改性其实是1个双刃剑</li>
+<li>Nothing is irrevocable.</li>
+<li>solidity 这个语言是否有问题？ <ul>
+<li>解决思路:模板</li>
+</ul>
+</li>
+<li>去中心化意味着什么？<ul>
+<li>分叉是民主的体现</li>
+</ul>
+</li>
+<li>去中心化≠分布式<h3 id="讨论-3"><a href="#讨论-3" class="headerlink" title="讨论"></a>讨论</h3></li>
+<li>全节点先挖矿还是先执行合约？<ul>
+<li>执行过程中状态变化都在本地(本地维护了1个状态树)，执行完以后发布才达成共识</li>
+<li>必须先执行，因为blocker header中包含三棵树的根hash值，而挖矿的nonce是要根据blocker header来计算的，所以要先执行合约再挖矿</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/06/16/unicorn/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1670,20 +2011,20 @@ print(''.join([chr(i) for i in res[::-1]]))<span aria-hidden="true" class="line-
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-count">40</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">19</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-count">23</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
