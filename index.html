@@ -196,6 +196,255 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/02/xiang-yun-bei-2021/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/09/02/xiang-yun-bei-2021/" class="post-title-link" itemprop="url">祥云杯2021</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-09-02 22:56:42" itemprop="dateCreated datePublished" datetime="2021-09-02T22:56:42+08:00">2021-09-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-09-06 17:19:59" itemprop="dateModified" datetime="2021-09-06T17:19:59+08:00">2021-09-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/09/02/xiang-yun-bei-2021/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/09/02/xiang-yun-bei-2021/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Re"><a href="#Re" class="headerlink" title="Re"></a>Re</h1><h2 id="Re-Apc"><a href="#Re-Apc" class="headerlink" title="Re_Apc"></a>Re_Apc</h2><p>比赛的时候没有做出来，被DllInjector.dll折磨到心态爆炸，网站sha3-256的时候还错了。<br>后来发现根本用不到DllInjector.dll中的加密，还是没有老老实实地分析代码，太急躁了。</p>
+<p>首先，这是1个驱动程序，可以使用工具InstDrv安装该驱动。<br>调试驱动程序需要使用WinDbg，需要配置WinDbg双机调试环境</p>
+<pre class="line-numbers language-none"><code class="language-none"># win10客户机配置方案
+设置-&gt;更新和安全→开发人员选项:转为开发人员模式
+
+win+r→msconfig→引导→高级选项：选中调试、调试端口选择COM1、波特率选择115200
+
+# win10调试机配置方案
+1. 安装WinDbg
+2. 虚拟机硬件配置中删除打印机(会占用串口)，重新创建1个串口，如下图
+
+# WinDbg kernel mode调试
+选择Attack Kernel,使用com端口
+port：\\.\pipe\com_1
+Baud Rate：115200<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<img src="/2021/09/02/xiang-yun-bei-2021/WinDbg%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E7%BD%AE.jpg" class="">
+
+<p><strong>需要非常注意的是，只有在WinDbg载入驱动的时候我们才能给驱动下断，所有如果发现断点无法成功断下来，可以考虑卸载驱动，再次安装并启动</strong></p>
+<h3 id="injectDriver-sys分析"><a href="#injectDriver-sys分析" class="headerlink" title="injectDriver.sys分析"></a>injectDriver.sys分析</h3><p>windows驱动程序的入口是DriverEntry<br>不是非常熟悉驱动程序，用vs2019编译了一个HelloWorld.sys，并且保留了调试符号，用ida打开</p>
+<p>带符号的驱动主函数如下：</p>
+<img src="/2021/09/02/xiang-yun-bei-2021/kmdfEntry.png" class="">
+<p>可以看到里面有1个DriverEntry，对比一下位置，在题中所给程序的该函数应该为sub1400015EC</p>
+<img src="/2021/09/02/xiang-yun-bei-2021/injectEntry.png" class="">
+
+<img src="/2021/09/02/xiang-yun-bei-2021/createDevice.png" class="">    
+<p>其中MajorFunction表示驱动在收到不同IRP时候的回调函数    </p>
+<p>函数sub_1400019D8()解密释放了一个dll文件，InjectDLL.dll<br>其路径为C:\WINDOWS\TEMP\InjectDLL.dll</p>
+<p>函数sub_1400019A4()创建了1个LPC，并新建了一个线程用来处理收到请求</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">NTSTATUS sub_1400019A4()
+{
+  __int64 v0; // rax
+  NTSTATUS result; // eax
+
+  LOBYTE(v0) = sub_140002360();
+  qword_14000C2A8 = v0;
+  if ( !sub_1400017F0() || (result = create_rpc(L"\\RPC Control\\ad034789-9a13-4153-a0b9-8523e91890f9"), result &lt; 0) )
+    result = -1073741823;
+  return result;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">result = PsCreateSystemThread(&amp;ThreadHandle, 0, 0i64, 0i64, 0i64, (PKSTART_ROUTINE)StartRoutine, &amp;qword_14000C300);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>StartRoutine为处理LPC的函数</p>
+<p>针对StartRoutine的分析：</p>
+<ol>
+<li>使用NtReplyWaitRecvivePort接收PORT_MESSAGE</li>
+<li>通过判断PORT_MESSAGE的u2数据结构来判断是不是第一次建立连接 <img src="/2021/09/02/xiang-yun-bei-2021/portmessage%E4%B9%8Bu2.png" class=""></li>
+<li>如果是第一次连接，则通过NtAcceptConnectPort和NtCompleteConnectPort建立无名端口并唤醒客户端进程。并且为每个新建立的连接分配内存，创建了1个链表来维护它。</li>
+<li>如果不是第一次连接，如果u2的type不为5则继续执行，此时会判断客户端发送过来的控制数据来分辨发送过来的数据，分别执行不同的操作，如果发送过来的是key，则会对key进行叠加异或(sub14000298C())，然后返回结果给客户端。</li>
+</ol>
+<p>函数sub140001B78()注册了两个回调，一个是进程创建时的回调，另一个是加载映像时的回调。</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">char callback_register()
+{
+  if ( PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)CreateProcessRoutine, 0) )
+    return 0;
+  if ( PsSetLoadImageNotifyRoutine((PLOAD_IMAGE_NOTIFY_ROUTINE)LoadImageRoutine) &lt; 0 )// 注册模块加载的回调函数，只要有模块加载，该函数就会执行
+                                                // 
+                                                // 如果回调注册失败，执行下面的操作：
+                                                // 也就是说这个回调已经被注册过了
+                                                // 需要把下面的监视进程的回调给Remove掉
+  {
+    PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)CreateProcessRoutine, 1u);
+    return 0;
+  }
+  return 1;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>进程创建的回调函数执行如下操作：    </p>
+<ol>
+<li>为每个进程分配1块大小为0x130的内存</li>
+<li>将一些与该进程有关的信息存放到这块内存中   <ol>
+<li>需要注意的是0x12D处的值，这里其实是在判断进程名是否为explorer开头，如果是，则其hash会使得v11==0，0x12D处的值为1(这个也是赛后看大佬博客才知道的orz,但是不知道也没有关系，这个值我们可以直接改)</li>
+<li>注意63行与67行，可以发现这里实际上维护了一个前向的链表，0x8处指向的是上一个进程对应的节点(且称它为pool)。</li>
+<li>这个&amp;P没看懂是什么意思，不过影响不大</li>
+</ol>
+</li>
+</ol>
+<img src="/2021/09/02/xiang-yun-bei-2021/CreateProcessCallBack.png" class="">
+
+<p>镜像加载的回调函数执行如下操作:</p>
+<ol>
+<li>找到加载该镜像的进程的节点</li>
+<li>如果满足镜像名各个字节之和与上0x1FF为0x100,则会在创建内核Apc的时候注册1个唯一的NormalRoutine</li>
+</ol>
+<p>问题：</p>
+<ol>
+<li>用户态进程触发该回调函数的时候，该函数的权限是用户态还是内核态？<br> 因为代码是处于内核区域的，所以它的权限是R0级别</li>
+<li><strong>该回调函数注册的Apc，属于触发回调函数的进程？还是属于注册回调函数的进程？</strong><br> 应该属于触发回调函数的进程</li>
+</ol>
+<p>针对NormalRoutine的分析   </p>
+<ol>
+<li>ZwCreateSection创建一块共享内存</li>
+<li>然后根据pool的0x128处的数据v1选择调用不同的函数<br> 如果v1是2的时候，会向r3处注入shellcode(但是我调不出这条路径orz),然后再次注册1个用户模式的Apc，ApcRoutine为注入的shellcode,ApcContext为LdrLoadDll。注册的函数其实就是调用LdrLoadDll，这里其实是用R3载入了InjectDLL.dll</li>
+</ol>
+<p>所以这里我们实际上有两种方式载入InjectDLL.dll:</p>
+<ol>
+<li>达成上述条件</li>
+<li>强行Load InjectDLL.dll</li>
+</ol>
+<h3 id="InjectDLL-dll分析"><a href="#InjectDLL-dll分析" class="headerlink" title="InjectDLL.dll分析"></a>InjectDLL.dll分析</h3><p>加载了1个不存在的dll文件(之前随手写了1个load InjectDLL.dll，不知道为什么会莫名其妙地加载后会卸载)<br>然后会加载一个GetContentHash函数</p>
+<p>该函数会对"test"做hash，然后和结果进行比对，经过验证，该hash是sha3-256。</p>
+<p>接着程序貌似对"AkiraDDL"进行了hash，然后用hash值作为key加密flag。(然而这里其实hash了个寂寞，最后并没有用到这个key)</p>
+<p>回过头分析驱动中的MajorFunction，生成key的函数为sub_140003704()   </p>
+<img src="/2021/09/02/xiang-yun-bei-2021/key%E7%9A%84%E4%BA%A7%E7%94%9F(1).png" class="">
+<p>用户态通过DeviceIoControl函数向驱动发送请求，驱动通过该函数处理用户态请求，调试中最后返回给用户态的的数据其实是fix_data,也是一段固定的数据，但是与hash值无关。</p>
+<p>前面说的是第一种通信方式，通过DeviceIoControl和驱动通信</p>
+<p>接下来还会使用第二种通信方式，即通过LPC的方式通信，这里主要要看sys文件中的StartRoutine方法是如何处理IRP的。<br>dll文件在发送请求报的时候一共有两种状态：</p>
+<ol>
+<li>发送Test给驱动，附带控制数据1，则驱动执行原样复制，然后用NtReplyPort函数回复客户端。</li>
+<li>发送key给驱动，附带控制数据3，对key进行叠加异或</li>
+</ol>
+<p>在获得加密密钥以后，dll会读取flag.txt文件中的明文，并用key对它进行32次加密，每轮根据rand()%6使用不同的加密函数(因为程序没有初始化种子，所以默认种子为1，即每轮使用的是哪个加密函数是可以确定的)，具体每一轮的加密函数看驱动中的MajorFunction[0xE]即可。</p>
+<h3 id="关于Apc"><a href="#关于Apc" class="headerlink" title="关于Apc"></a>关于Apc</h3><p>待补充</p>
+<h3 id="关于Lpc"><a href="#关于Lpc" class="headerlink" title="关于Lpc"></a>关于Lpc</h3><p>服务端：    </p>
+<ol>
+<li>NtCreatePort</li>
+<li>NtListenPort(服务端被阻塞，等待来自客户端的连接请求)</li>
+<li>服务端接收连接请求<ol>
+<li>收到第一次连接请求时:NtAcceptConnectPort(服务端收到连接请求被唤醒，创建一个无名端)，之后使用NtCompleteConnectPort唤醒客户端进程</li>
+<li>收到非第一次连接请求时:NtReplyWaitReceivePort</li>
+</ol>
+</li>
+</ol>
+<p>客户端:</p>
+<ol>
+<li>NtConnectPort</li>
+<li>NtRequestWaitReplyPort</li>
+</ol>
+<p>IRP数据包结构：   </p>
+<img src="/2021/09/02/xiang-yun-bei-2021/IRP%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84.png" class="">   
+<img src="/2021/09/02/xiang-yun-bei-2021/IRP%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%A7%A3%E9%87%8A.png" class="">   
+
+<h3 id="WinDbg常用命令"><a href="#WinDbg常用命令" class="headerlink" title="WinDbg常用命令"></a>WinDbg常用命令</h3><pre class="line-numbers language-none"><code class="language-none"># 查看已加载的模块
+lm
+
+# 查看内存
+da address    //字符串形式查看
+db/dd/dw/dq address
+dt symbolname address   //以xx结构查看内存
+
+# 反汇编
+u address
+
+# 断点
+bp address(modulename+偏移)
+/1 一次性断点
+# 条件断点
+bp address ".if (condition) {operate} .else {gc}"    //其中gc表示go continue   
+# 删除断点
+bc 
+# 查看断点
+bl
+
+# MASM运算
+qwo/dwo/wo/by(address)
+poi(address)      //取值操作
+
+# 查看寄存器
+r rax<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li><a target="_blank" rel="noopener" href="https://bbs.pediy.com/thread-269036.htm#msg_header_h3_0">https://bbs.pediy.com/thread-269036.htm#msg_header_h3_0</a></li>
+<li><a href="/2021/09/02/xiang-yun-bei-2021/solve.cpp" title="解密脚本">解密脚本</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/08/30/hong-hei-shu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -339,7 +588,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-30 17:02:03" itemprop="dateModified" datetime="2021-08-30T17:02:03+08:00">2021-08-30</time>
+                <time title="修改时间：2021-08-30 21:12:54" itemprop="dateModified" datetime="2021-08-30T21:12:54+08:00">2021-08-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -410,7 +659,7 @@
 <p> 当然，对于多核处理器而言，一个线程的阻塞不会影响另一个处理器中它Peer Thread的运行。</p>
 </li>
 </ol>
-<h1 id="Windows中的数据结构"><a href="#Windows中的数据结构" class="headerlink" title="Windows中的数据结构"></a>Windows中的数据结构</h1><h1 id="Linux中的进程与线程"><a href="#Linux中的进程与线程" class="headerlink" title="Linux中的进程与线程"></a>Linux中的进程与线程</h1><h2 id="Linux中的进程"><a href="#Linux中的进程" class="headerlink" title="Linux中的进程"></a>Linux中的进程</h2><p>进程描述符task_struct</p>
+<h1 id="Linux中的进程与线程"><a href="#Linux中的进程与线程" class="headerlink" title="Linux中的进程与线程"></a>Linux中的进程与线程</h1><h2 id="Linux中的进程"><a href="#Linux中的进程" class="headerlink" title="Linux中的进程"></a>Linux中的进程</h2><p>进程描述符task_struct</p>
 <p>Linux中进程的创建过程：<br>创建进程描述符→申请内存空间→设置进程状态、将其加入调度序列</p>
 <h3 id="COW-写时复制"><a href="#COW-写时复制" class="headerlink" title="COW(写时复制)"></a>COW(写时复制)</h3><p>Linux父进程在创建子进程的时候，子进程最初复用父进程的地址空间。只有当内存页发生变化的时候，才会重新申请一块内存页。fork()的子进程的堆栈指向父进程的堆栈。</p>
 <h3 id="Linux进程树"><a href="#Linux进程树" class="headerlink" title="Linux进程树"></a>Linux进程树</h3><p>init进程：在内核启动的最后阶段，会创建init进程，它的进程id为1(Linux最大进程号为32767)</p>
@@ -457,6 +706,8 @@
 <li>触发schedule函数，调度其它进程</li>
 </ol>
 <h2 id="Linux中的线程"><a href="#Linux中的线程" class="headerlink" title="Linux中的线程"></a>Linux中的线程</h2><p>Linux没有单独的线程概念，实际上Linux中的线程就是一个普通的进程，只是它可能与其它进程共享某些资源，如地址空间。</p>
+<h1 id="Windows中的进程与线程"><a href="#Windows中的进程与线程" class="headerlink" title="Windows中的进程与线程"></a>Windows中的进程与线程</h1><p>首先要明确的一点是，windows中的线程与线程是截然不同的，这一点与linux有本质区别。在windos中，进程只负责资源分配，而线程是调度的基本单位，二者都拥有自己独立的数据结构。</p>
+<p>其它的以后再研究吧。。。</p>
 <h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/XD_hebuters/article/details/79623130">CFS调度算法</a></li>
 <li><a target="_blank" rel="noopener" href="https://notes.eddyerburgh.me/operating-systems/linux/process-scheduling">Linux进程调度算法</a></li>
@@ -1212,106 +1463,10 @@ chkconfig [service] on/off<span aria-hidden="true" class="line-numbers-rows"><sp
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/08/01/out-of-control-overcoming-control-flow-integrity/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="n0rthwater">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="n0rthwater">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/01/out-of-control-overcoming-control-flow-integrity/" class="post-title-link" itemprop="url">Out of Control: Overcoming Control-Flow Integrity</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-08-01 14:59:48 / 修改时间：15:24:35" itemprop="dateCreated datePublished" datetime="2021-08-01T14:59:48+08:00">2021-08-01</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/01/out-of-control-overcoming-control-flow-integrity/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/01/out-of-control-overcoming-control-flow-integrity/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="阅读记录"><a href="#阅读记录" class="headerlink" title="阅读记录"></a>阅读记录</h1><blockquote>
-<p>文章速览:</p>
-<ol>
-<li>评估了当前CFI的安全性</li>
-<li>构造了利用链</li>
-<li>给出IE8 On Windows 7的POC</li>
-</ol>
-</blockquote>
-<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><pre class="line-numbers language-none"><code class="language-none">@inproceedings{goktas2014out,
-  title={Out of control: Overcoming control-flow integrity},
-  author={G{\"o}ktas, Enes and Athanasopoulos, Elias and Bos, Herbert and Portokalidis, Georgios},
-  booktitle={2014 IEEE Symposium on Security and Privacy},
-  pages={575--589},
-  year={2014},
-  organization={IEEE}
-}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1377,20 +1532,20 @@ chkconfig [service] on/off<span aria-hidden="true" class="line-numbers-rows"><sp
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">40</span>
+          <span class="site-state-item-count">41</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-count">20</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-count">25</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

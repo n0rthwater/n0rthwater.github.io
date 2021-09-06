@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="ReRe_Apc比赛的时候没有做出来，被DllInjector.dll折磨到心态爆炸，网站sha3-256的时候还错了。后来发现根本用不到DllInjector.dll中的加密，还是没有老老实实地分析代码，太急躁了。 首先，这是1个驱动程序，可以使用工具InstDrv安装该驱动。调试驱动程序需要使用WinDbg，需要配置WinDbg双机调试环境 # win10客户机配置方案 设置-&gt;更新和安">
+<meta property="og:type" content="article">
+<meta property="og:title" content="祥云杯2021">
+<meta property="og:url" content="http://example.com/2021/09/02/xiang-yun-bei-2021/index.html">
+<meta property="og:site_name" content="n0rthwater">
+<meta property="og:description" content="ReRe_Apc比赛的时候没有做出来，被DllInjector.dll折磨到心态爆炸，网站sha3-256的时候还错了。后来发现根本用不到DllInjector.dll中的加密，还是没有老老实实地分析代码，太急躁了。 首先，这是1个驱动程序，可以使用工具InstDrv安装该驱动。调试驱动程序需要使用WinDbg，需要配置WinDbg双机调试环境 # win10客户机配置方案 设置-&gt;更新和安">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/WinDbg%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E7%BD%AE.jpg">
+<meta property="og:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/kmdfEntry.png">
+<meta property="og:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/injectEntry.png">
+<meta property="og:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/createDevice.png">
+<meta property="og:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/portmessage%E4%B9%8Bu2.png">
+<meta property="og:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/CreateProcessCallBack.png">
+<meta property="og:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/key%E7%9A%84%E4%BA%A7%E7%94%9F(1).png">
+<meta property="og:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/IRP%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/IRP%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%A7%A3%E9%87%8A.png">
+<meta property="article:published_time" content="2021-09-02T14:56:42.000Z">
+<meta property="article:modified_time" content="2021-09-06T09:19:59.809Z">
+<meta property="article:author" content="n0rthwater">
+<meta property="article:tag" content="writeup">
+<meta property="article:tag" content="windows apc">
+<meta property="article:tag" content="windows r0">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2021/09/02/xiang-yun-bei-2021/WinDbg%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E7%BD%AE.jpg">
+
+<link rel="canonical" href="http://example.com/2021/09/02/xiang-yun-bei-2021/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>祥云杯2021 | n0rthwater</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">n0rthwater</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">尊严只在剑锋之上，真理只在大炮射程之内</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/02/xiang-yun-bei-2021/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          祥云杯2021
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-09-02 22:56:42" itemprop="dateCreated datePublished" datetime="2021-09-02T22:56:42+08:00">2021-09-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-09-06 17:19:59" itemprop="dateModified" datetime="2021-09-06T17:19:59+08:00">2021-09-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/09/02/xiang-yun-bei-2021/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/09/02/xiang-yun-bei-2021/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Re"><a href="#Re" class="headerlink" title="Re"></a>Re</h1><h2 id="Re-Apc"><a href="#Re-Apc" class="headerlink" title="Re_Apc"></a>Re_Apc</h2><p>比赛的时候没有做出来，被DllInjector.dll折磨到心态爆炸，网站sha3-256的时候还错了。<br>后来发现根本用不到DllInjector.dll中的加密，还是没有老老实实地分析代码，太急躁了。</p>
+<p>首先，这是1个驱动程序，可以使用工具InstDrv安装该驱动。<br>调试驱动程序需要使用WinDbg，需要配置WinDbg双机调试环境</p>
+<pre class="line-numbers language-none"><code class="language-none"># win10客户机配置方案
+设置-&gt;更新和安全→开发人员选项:转为开发人员模式
+
+win+r→msconfig→引导→高级选项：选中调试、调试端口选择COM1、波特率选择115200
+
+# win10调试机配置方案
+1. 安装WinDbg
+2. 虚拟机硬件配置中删除打印机(会占用串口)，重新创建1个串口，如下图
+
+# WinDbg kernel mode调试
+选择Attack Kernel,使用com端口
+port：\\.\pipe\com_1
+Baud Rate：115200<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<img src="/2021/09/02/xiang-yun-bei-2021/WinDbg%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E7%BD%AE.jpg" class="">
+
+<p><strong>需要非常注意的是，只有在WinDbg载入驱动的时候我们才能给驱动下断，所有如果发现断点无法成功断下来，可以考虑卸载驱动，再次安装并启动</strong></p>
+<h3 id="injectDriver-sys分析"><a href="#injectDriver-sys分析" class="headerlink" title="injectDriver.sys分析"></a>injectDriver.sys分析</h3><p>windows驱动程序的入口是DriverEntry<br>不是非常熟悉驱动程序，用vs2019编译了一个HelloWorld.sys，并且保留了调试符号，用ida打开</p>
+<p>带符号的驱动主函数如下：</p>
+<img src="/2021/09/02/xiang-yun-bei-2021/kmdfEntry.png" class="">
+<p>可以看到里面有1个DriverEntry，对比一下位置，在题中所给程序的该函数应该为sub1400015EC</p>
+<img src="/2021/09/02/xiang-yun-bei-2021/injectEntry.png" class="">
+
+<img src="/2021/09/02/xiang-yun-bei-2021/createDevice.png" class="">    
+<p>其中MajorFunction表示驱动在收到不同IRP时候的回调函数    </p>
+<p>函数sub_1400019D8()解密释放了一个dll文件，InjectDLL.dll<br>其路径为C:\WINDOWS\TEMP\InjectDLL.dll</p>
+<p>函数sub_1400019A4()创建了1个LPC，并新建了一个线程用来处理收到请求</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">NTSTATUS sub_1400019A4()
+{
+  __int64 v0; // rax
+  NTSTATUS result; // eax
+
+  LOBYTE(v0) = sub_140002360();
+  qword_14000C2A8 = v0;
+  if ( !sub_1400017F0() || (result = create_rpc(L"\\RPC Control\\ad034789-9a13-4153-a0b9-8523e91890f9"), result &lt; 0) )
+    result = -1073741823;
+  return result;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">result = PsCreateSystemThread(&amp;ThreadHandle, 0, 0i64, 0i64, 0i64, (PKSTART_ROUTINE)StartRoutine, &amp;qword_14000C300);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>StartRoutine为处理LPC的函数</p>
+<p>针对StartRoutine的分析：</p>
+<ol>
+<li>使用NtReplyWaitRecvivePort接收PORT_MESSAGE</li>
+<li>通过判断PORT_MESSAGE的u2数据结构来判断是不是第一次建立连接 <img src="/2021/09/02/xiang-yun-bei-2021/portmessage%E4%B9%8Bu2.png" class=""></li>
+<li>如果是第一次连接，则通过NtAcceptConnectPort和NtCompleteConnectPort建立无名端口并唤醒客户端进程。并且为每个新建立的连接分配内存，创建了1个链表来维护它。</li>
+<li>如果不是第一次连接，如果u2的type不为5则继续执行，此时会判断客户端发送过来的控制数据来分辨发送过来的数据，分别执行不同的操作，如果发送过来的是key，则会对key进行叠加异或(sub14000298C())，然后返回结果给客户端。</li>
+</ol>
+<p>函数sub140001B78()注册了两个回调，一个是进程创建时的回调，另一个是加载映像时的回调。</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">char callback_register()
+{
+  if ( PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)CreateProcessRoutine, 0) )
+    return 0;
+  if ( PsSetLoadImageNotifyRoutine((PLOAD_IMAGE_NOTIFY_ROUTINE)LoadImageRoutine) &lt; 0 )// 注册模块加载的回调函数，只要有模块加载，该函数就会执行
+                                                // 
+                                                // 如果回调注册失败，执行下面的操作：
+                                                // 也就是说这个回调已经被注册过了
+                                                // 需要把下面的监视进程的回调给Remove掉
+  {
+    PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)CreateProcessRoutine, 1u);
+    return 0;
+  }
+  return 1;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>进程创建的回调函数执行如下操作：    </p>
+<ol>
+<li>为每个进程分配1块大小为0x130的内存</li>
+<li>将一些与该进程有关的信息存放到这块内存中   <ol>
+<li>需要注意的是0x12D处的值，这里其实是在判断进程名是否为explorer开头，如果是，则其hash会使得v11==0，0x12D处的值为1(这个也是赛后看大佬博客才知道的orz,但是不知道也没有关系，这个值我们可以直接改)</li>
+<li>注意63行与67行，可以发现这里实际上维护了一个前向的链表，0x8处指向的是上一个进程对应的节点(且称它为pool)。</li>
+<li>这个&amp;P没看懂是什么意思，不过影响不大</li>
+</ol>
+</li>
+</ol>
+<img src="/2021/09/02/xiang-yun-bei-2021/CreateProcessCallBack.png" class="">
+
+<p>镜像加载的回调函数执行如下操作:</p>
+<ol>
+<li>找到加载该镜像的进程的节点</li>
+<li>如果满足镜像名各个字节之和与上0x1FF为0x100,则会在创建内核Apc的时候注册1个唯一的NormalRoutine</li>
+</ol>
+<p>问题：</p>
+<ol>
+<li>用户态进程触发该回调函数的时候，该函数的权限是用户态还是内核态？<br> 因为代码是处于内核区域的，所以它的权限是R0级别</li>
+<li><strong>该回调函数注册的Apc，属于触发回调函数的进程？还是属于注册回调函数的进程？</strong><br> 应该属于触发回调函数的进程</li>
+</ol>
+<p>针对NormalRoutine的分析   </p>
+<ol>
+<li>ZwCreateSection创建一块共享内存</li>
+<li>然后根据pool的0x128处的数据v1选择调用不同的函数<br> 如果v1是2的时候，会向r3处注入shellcode(但是我调不出这条路径orz),然后再次注册1个用户模式的Apc，ApcRoutine为注入的shellcode,ApcContext为LdrLoadDll。注册的函数其实就是调用LdrLoadDll，这里其实是用R3载入了InjectDLL.dll</li>
+</ol>
+<p>所以这里我们实际上有两种方式载入InjectDLL.dll:</p>
+<ol>
+<li>达成上述条件</li>
+<li>强行Load InjectDLL.dll</li>
+</ol>
+<h3 id="InjectDLL-dll分析"><a href="#InjectDLL-dll分析" class="headerlink" title="InjectDLL.dll分析"></a>InjectDLL.dll分析</h3><p>加载了1个不存在的dll文件(之前随手写了1个load InjectDLL.dll，不知道为什么会莫名其妙地加载后会卸载)<br>然后会加载一个GetContentHash函数</p>
+<p>该函数会对"test"做hash，然后和结果进行比对，经过验证，该hash是sha3-256。</p>
+<p>接着程序貌似对"AkiraDDL"进行了hash，然后用hash值作为key加密flag。(然而这里其实hash了个寂寞，最后并没有用到这个key)</p>
+<p>回过头分析驱动中的MajorFunction，生成key的函数为sub_140003704()   </p>
+<img src="/2021/09/02/xiang-yun-bei-2021/key%E7%9A%84%E4%BA%A7%E7%94%9F(1).png" class="">
+<p>用户态通过DeviceIoControl函数向驱动发送请求，驱动通过该函数处理用户态请求，调试中最后返回给用户态的的数据其实是fix_data,也是一段固定的数据，但是与hash值无关。</p>
+<p>前面说的是第一种通信方式，通过DeviceIoControl和驱动通信</p>
+<p>接下来还会使用第二种通信方式，即通过LPC的方式通信，这里主要要看sys文件中的StartRoutine方法是如何处理IRP的。<br>dll文件在发送请求报的时候一共有两种状态：</p>
+<ol>
+<li>发送Test给驱动，附带控制数据1，则驱动执行原样复制，然后用NtReplyPort函数回复客户端。</li>
+<li>发送key给驱动，附带控制数据3，对key进行叠加异或</li>
+</ol>
+<p>在获得加密密钥以后，dll会读取flag.txt文件中的明文，并用key对它进行32次加密，每轮根据rand()%6使用不同的加密函数(因为程序没有初始化种子，所以默认种子为1，即每轮使用的是哪个加密函数是可以确定的)，具体每一轮的加密函数看驱动中的MajorFunction[0xE]即可。</p>
+<h3 id="关于Apc"><a href="#关于Apc" class="headerlink" title="关于Apc"></a>关于Apc</h3><p>待补充</p>
+<h3 id="关于Lpc"><a href="#关于Lpc" class="headerlink" title="关于Lpc"></a>关于Lpc</h3><p>服务端：    </p>
+<ol>
+<li>NtCreatePort</li>
+<li>NtListenPort(服务端被阻塞，等待来自客户端的连接请求)</li>
+<li>服务端接收连接请求<ol>
+<li>收到第一次连接请求时:NtAcceptConnectPort(服务端收到连接请求被唤醒，创建一个无名端)，之后使用NtCompleteConnectPort唤醒客户端进程</li>
+<li>收到非第一次连接请求时:NtReplyWaitReceivePort</li>
+</ol>
+</li>
+</ol>
+<p>客户端:</p>
+<ol>
+<li>NtConnectPort</li>
+<li>NtRequestWaitReplyPort</li>
+</ol>
+<p>IRP数据包结构：   </p>
+<img src="/2021/09/02/xiang-yun-bei-2021/IRP%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84.png" class="">   
+<img src="/2021/09/02/xiang-yun-bei-2021/IRP%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%A7%A3%E9%87%8A.png" class="">   
+
+<h3 id="WinDbg常用命令"><a href="#WinDbg常用命令" class="headerlink" title="WinDbg常用命令"></a>WinDbg常用命令</h3><pre class="line-numbers language-none"><code class="language-none"># 查看已加载的模块
+lm
+
+# 查看内存
+da address    //字符串形式查看
+db/dd/dw/dq address
+dt symbolname address   //以xx结构查看内存
+
+# 反汇编
+u address
+
+# 断点
+bp address(modulename+偏移)
+/1 一次性断点
+# 条件断点
+bp address ".if (condition) {operate} .else {gc}"    //其中gc表示go continue   
+# 删除断点
+bc 
+# 查看断点
+bl
+
+# MASM运算
+qwo/dwo/wo/by(address)
+poi(address)      //取值操作
+
+# 查看寄存器
+r rax<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li><a target="_blank" rel="noopener" href="https://bbs.pediy.com/thread-269036.htm#msg_header_h3_0">https://bbs.pediy.com/thread-269036.htm#msg_header_h3_0</a></li>
+<li><a href="/2021/09/02/xiang-yun-bei-2021/solve.cpp" title="解密脚本">解密脚本</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/writeup/" rel="tag"># writeup</a>
+              <a href="/tags/windows-apc/" rel="tag"># windows apc</a>
+              <a href="/tags/windows-r0/" rel="tag"># windows r0</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/30/hong-hei-shu/" rel="prev" title="红黑树">
+      <i class="fa fa-chevron-left"></i> 红黑树
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Re"><span class="nav-text">Re</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Re-Apc"><span class="nav-text">Re_Apc</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#injectDriver-sys%E5%88%86%E6%9E%90"><span class="nav-text">injectDriver.sys分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#InjectDLL-dll%E5%88%86%E6%9E%90"><span class="nav-text">InjectDLL.dll分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8EApc"><span class="nav-text">关于Apc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8ELpc"><span class="nav-text">关于Lpc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WinDbg%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="nav-text">WinDbg常用命令</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">n0rthwater</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/n0rthwater" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;n0rthwater" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">n0rthwater</span>
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'B646Qmi9vGiJO0WD0drOUl4t-gzGzoHsz',
+      appKey     : 'fok3WfEXmQeIkOGVzrYg4tSC',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
