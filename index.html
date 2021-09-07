@@ -196,6 +196,289 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/07/c-cheng-xu-ni-xiang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/09/07/c-cheng-xu-ni-xiang/" class="post-title-link" itemprop="url">C++程序逆向</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-09-07 15:18:38 / 修改时间：20:56:31" itemprop="dateCreated datePublished" datetime="2021-09-07T15:18:38+08:00">2021-09-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">逆向工程</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/09/07/c-cheng-xu-ni-xiang/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/09/07/c-cheng-xu-ni-xiang/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="继承"><a href="#继承" class="headerlink" title="继承"></a>继承</h1><p>示例代码：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;iostream&gt;
+
+using namespace std;
+
+class Human {
+public:
+		virtual void act()=0;
+};
+
+class Parent:public Human{
+public:
+		Parent(){
+			name = 0;
+		}
+
+		void getName() {
+			cout &lt;&lt; "Get parent's name.\n";
+		}
+
+		virtual void act() {
+			cout &lt;&lt; "Parent act.\n";
+		}
+private:
+		int name;
+};
+
+class Child:public Parent{
+public:
+		Child(){
+			age = 10;
+		}
+
+		int getAge() {
+			return age;
+		}
+
+		int getAge(int id) {
+			return age+id;
+		}
+
+		void getName() {
+			cout &lt;&lt; "Get children's name.\n";
+		}
+
+		virtual void act() {
+			cout &lt;&lt; "Child act.\n";
+		}
+private:
+		int age;
+};
+
+int main(){
+		Child c;
+		Parent p;
+		cout &lt;&lt; "child's age is:" &lt;&lt; c.getAge(10) &lt;&lt; "\n";
+		cout &lt;&lt; "child's age is:" &lt;&lt; c.getAge() &lt;&lt; "\n";
+		c.getName();
+		p.getName();
+		c.act();
+		p.act();
+		return 0;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>编译：</p>
+<pre class="line-numbers language-none"><code class="language-none">g++ -m64 test.cpp -o test <span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>反汇编:</p>
+<pre class="line-numbers language-none"><code class="language-none">objdump -d test<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h2 id="构造函数"><a href="#构造函数" class="headerlink" title="构造函数"></a>构造函数</h2><pre class="line-numbers language-asm" data-language="asm"><code class="language-asm">0000000000001220 &lt;_ZN6ParentC1Ev&gt;:
+    1220:	55                   	push   %rbp
+    1221:	48 89 e5             	mov    %rsp,%rbp
+    1224:	48 89 7d f8          	mov    %rdi,-0x8(%rbp)
+    1228:	48 8b 45 f8          	mov    -0x8(%rbp),%rax
+    122c:	c7 00 00 00 00 00    	movl   $0x0,(%rax)
+    1232:	90                   	nop
+    1233:	5d                   	pop    %rbp
+    1234:	c3                   	retq   
+    1235:	90                   	nop
+
+0000000000001236 &lt;_ZN5ChildC1Ev&gt;:
+    1236:	55                   	push   %rbp
+    1237:	48 89 e5             	mov    %rsp,%rbp
+    123a:	48 83 ec 10          	sub    $0x10,%rsp
+    123e:	48 89 7d f8          	mov    %rdi,-0x8(%rbp)
+    1242:	48 8b 45 f8          	mov    -0x8(%rbp),%rax
+    1246:	48 89 c7             	mov    %rax,%rdi
+    1249:	e8 d2 ff ff ff       	callq  1220 &lt;_ZN6ParentC1Ev&gt;
+    124e:	48 8b 45 f8          	mov    -0x8(%rbp),%rax
+    1252:	c7 40 04 0a 00 00 00 	movl   $0xa,0x4(%rax)
+    1259:	90                   	nop
+    125a:	c9                   	leaveq 
+    125b:	c3                   	retq   
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>父类构造函数：<br>this指针是函数的第1个参数，存放在rdi寄存器中。<br>val是类的第一个属性，因为这个类没有虚函数表，所以它在对象中的内存偏移为0。</p>
+<p>子类构造函数：<br>存在传参的过程，即把子类构造函数接收到的参数传递给父类构造函数。<br>这里我们没有显式地调用父类构造函数，但是程序默认调用了父类构造函数。<br>最后程序会执行自己的代码逻辑。</p>
+<h2 id="main函数："><a href="#main函数：" class="headerlink" title="main函数："></a>main函数：</h2><pre class="line-numbers language-asm" data-language="asm"><code class="language-asm">0000000000001165 &lt;main&gt;:
+    1165:	55                   	push   %rbp
+    1166:	48 89 e5             	mov    %rsp,%rbp
+    1169:	53                   	push   %rbx
+    116a:	48 83 ec 28          	sub    $0x28,%rsp
+    116e:	48 8d 45 e0          	lea    -0x20(%rbp),%rax
+    1172:	48 89 c7             	mov    %rax,%rdi
+    1175:	e8 8a 01 00 00       	callq  1304 &lt;_ZN5ChildC1Ev&gt;
+    117a:	48 8d 45 d0          	lea    -0x30(%rbp),%rax
+    117e:	48 89 c7             	mov    %rax,%rdi
+    1181:	e8 16 01 00 00       	callq  129c &lt;_ZN6ParentC1Ev&gt;
+    1186:	48 8d 35 bb 0e 00 00 	lea    0xebb(%rip),%rsi        # 2048 &lt;_ZStL19piecewise_construct+0x44&gt;
+    118d:	48 8d 3d ec 2e 00 00 	lea    0x2eec(%rip),%rdi        # 4080 &lt;_ZSt4cout@@GLIBCXX_3.4&gt;
+    1194:	e8 a7 fe ff ff       	callq  1040 &lt;_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt&gt;
+    1199:	48 89 c3             	mov    %rax,%rbx
+    119c:	48 8d 45 e0          	lea    -0x20(%rbp),%rax
+    11a0:	be 0a 00 00 00       	mov    $0xa,%esi
+    11a5:	48 89 c7             	mov    %rax,%rdi
+    11a8:	e8 9d 01 00 00       	callq  134a &lt;_ZN5Child6getAgeEi&gt;
+    11ad:	89 c6                	mov    %eax,%esi
+    11af:	48 89 df             	mov    %rbx,%rdi
+    11b2:	e8 a9 fe ff ff       	callq  1060 &lt;_ZNSolsEi@plt&gt;
+    11b7:	48 8d 35 9a 0e 00 00 	lea    0xe9a(%rip),%rsi        # 2058 &lt;_ZStL19piecewise_construct+0x54&gt;
+    11be:	48 89 c7             	mov    %rax,%rdi
+    11c1:	e8 7a fe ff ff       	callq  1040 &lt;_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt&gt;
+    11c6:	48 8d 35 7b 0e 00 00 	lea    0xe7b(%rip),%rsi        # 2048 &lt;_ZStL19piecewise_construct+0x44&gt;
+    11cd:	48 8d 3d ac 2e 00 00 	lea    0x2eac(%rip),%rdi        # 4080 &lt;_ZSt4cout@@GLIBCXX_3.4&gt;
+    11d4:	e8 67 fe ff ff       	callq  1040 &lt;_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt&gt;
+    11d9:	48 89 c3             	mov    %rax,%rbx
+    11dc:	48 8d 45 e0          	lea    -0x20(%rbp),%rax
+    11e0:	48 89 c7             	mov    %rax,%rdi
+    11e3:	e8 50 01 00 00       	callq  1338 &lt;_ZN5Child6getAgeEv&gt;
+    11e8:	89 c6                	mov    %eax,%esi
+    11ea:	48 89 df             	mov    %rbx,%rdi
+    11ed:	e8 6e fe ff ff       	callq  1060 &lt;_ZNSolsEi@plt&gt;
+    11f2:	48 8d 35 5f 0e 00 00 	lea    0xe5f(%rip),%rsi        # 2058 &lt;_ZStL19piecewise_construct+0x54&gt;
+    11f9:	48 89 c7             	mov    %rax,%rdi
+    11fc:	e8 3f fe ff ff       	callq  1040 &lt;_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt&gt;
+    1201:	48 8d 45 e0          	lea    -0x20(%rbp),%rax
+    1205:	48 89 c7             	mov    %rax,%rdi
+    1208:	e8 57 01 00 00       	callq  1364 &lt;_ZN5Child7getNameEv&gt;
+    120d:	48 8d 45 d0          	lea    -0x30(%rbp),%rax
+    1211:	48 89 c7             	mov    %rax,%rdi
+    1214:	e8 a7 00 00 00       	callq  12c0 &lt;_ZN6Parent7getNameEv&gt;
+    1219:	48 8d 45 e0          	lea    -0x20(%rbp),%rax
+    121d:	48 89 c7             	mov    %rax,%rdi
+    1220:	e8 61 01 00 00       	callq  1386 &lt;_ZN5Child3actEv&gt;
+    1225:	48 8d 45 d0          	lea    -0x30(%rbp),%rax
+    1229:	48 89 c7             	mov    %rax,%rdi
+    122c:	e8 b1 00 00 00       	callq  12e2 &lt;_ZN6Parent3actEv&gt;
+    1231:	b8 00 00 00 00       	mov    $0x0,%eax
+    1236:	48 83 c4 28          	add    $0x28,%rsp
+    123a:	5b                   	pop    %rbx
+    123b:	5d                   	pop    %rbp
+    123c:	c3                   	retq   <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>116e两行表明，使用这种方式声明的对象的数据是布局在栈上的</p>
+<h1 id="重载"><a href="#重载" class="headerlink" title="重载"></a>重载</h1><p>为类Child声明一个原型为int getAge(int)的函数，反汇编后程序中会多一个函数。</p>
+<h1 id="多态"><a href="#多态" class="headerlink" title="多态"></a>多态</h1><p>静态多态与动态多态</p>
+<p>静态多态即函数重载和函数模板</p>
+<h2 id="覆盖："><a href="#覆盖：" class="headerlink" title="覆盖："></a>覆盖：</h2><p>父类中有1个非虚函数的函数，子类中也有1个同名函数，并且二者类型相同。<br>父类：</p>
+<pre class="line-numbers language-none"><code class="language-none">000000000000129a &lt;_ZN6Parent7getNameEv&gt;:
+    129a:	55                   	push   %rbp
+    129b:	48 89 e5             	mov    %rsp,%rbp
+    129e:	48 83 ec 10          	sub    $0x10,%rsp
+    12a2:	48 89 7d f8          	mov    %rdi,-0x8(%rbp)
+    12a6:	48 8d 35 58 0d 00 00 	lea    0xd58(%rip),%rsi        # 2005 &lt;_ZStL19piecewise_construct+0x1&gt;
+    12ad:	48 8d 3d cc 2d 00 00 	lea    0x2dcc(%rip),%rdi        # 4080 &lt;_ZSt4cout@@GLIBCXX_3.4&gt;
+    12b4:	e8 87 fd ff ff       	callq  1040 &lt;_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt&gt;
+    12b9:	90                   	nop
+    12ba:	c9                   	leaveq 
+    12bb:	c3                   	retq <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>子类：</p>
+<pre class="line-numbers language-none"><code class="language-none">000000000000130e &lt;_ZN5Child7getNameEv&gt;:
+    130e:	55                   	push   %rbp
+    130f:	48 89 e5             	mov    %rsp,%rbp
+    1312:	48 83 ec 10          	sub    $0x10,%rsp
+    1316:	48 89 7d f8          	mov    %rdi,-0x8(%rbp)
+    131a:	48 8d 35 f8 0c 00 00 	lea    0xcf8(%rip),%rsi        # 2019 &lt;_ZStL19piecewise_construct+0x15&gt;
+    1321:	48 8d 3d 58 2d 00 00 	lea    0x2d58(%rip),%rdi        # 4080 &lt;_ZSt4cout@@GLIBCXX_3.4&gt;
+    1328:	e8 13 fd ff ff       	callq  1040 &lt;_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt&gt;
+    132d:	90                   	nop
+    132e:	c9                   	leaveq 
+    132f:	c3                   	retq   <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>父子类声明同名函数，在程序中会有两个不同的函数，其它没什么区别。</p>
+<h2 id="动态多态——虚函数"><a href="#动态多态——虚函数" class="headerlink" title="动态多态——虚函数"></a>动态多态——虚函数</h2><p>虚函数调用的表现如下:</p>
+<pre class="line-numbers language-asm" data-language="asm"><code class="language-asm">mov     rax, [rbp+var_20]   //栈上对象的this指针
+mov     rax, [rax]          //虚表
+mov     rdx, [rax]          //寻找寻函数
+mov     rax, [rbp+var_20]   
+mov     rdi, rax            //对象的this指针入参
+call    rdx<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>虚表位置</p>
+<pre class="line-numbers language-none"><code class="language-none">.data.rel.ro:0000000000003D58 ; `vtable for'Child
+.data.rel.ro:0000000000003D58 _ZTV5Child      dq 0                    ; offset to this
+.data.rel.ro:0000000000003D60                 dq offset _ZTI5Child    ; `typeinfo for'Child
+.data.rel.ro:0000000000003D68 off_3D68        dq offset _ZN5Child3actEv
+.data.rel.ro:0000000000003D68                                         ; DATA XREF: Child::Child(void)+18↑o
+.data.rel.ro:0000000000003D68                                         ; Child::act(void)
+.data.rel.ro:0000000000003D70                 public _ZTV6Parent ; weak
+.data.rel.ro:0000000000003D70 ; `vtable for'Parent
+.data.rel.ro:0000000000003D70 _ZTV6Parent     dq 0                    ; offset to this
+.data.rel.ro:0000000000003D78                 dq offset _ZTI6Parent   ; `typeinfo for'Parent
+.data.rel.ro:0000000000003D80 off_3D80        dq offset _ZN6Parent3actEv
+.data.rel.ro:0000000000003D80                                         ; DATA XREF: Parent::Parent(void)+18↑o
+.data.rel.ro:0000000000003D80                                         ; Parent::act(void)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/02/xiang-yun-bei-2021/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1376,93 +1659,6 @@ chkconfig [service] on/off<span aria-hidden="true" class="line-numbers-rows"><sp
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/08/01/counterfeit-object-oriented-programming-on-the-difficulty-of-preventing-code-reuse-attacks-in-c-applications/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="n0rthwater">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="n0rthwater">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/01/counterfeit-object-oriented-programming-on-the-difficulty-of-preventing-code-reuse-attacks-in-c-applications/" class="post-title-link" itemprop="url">Counterfeit Object-Oriented Programming: On the Difficulty of Preventing Code Reuse Attacks in C++ Applications</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-08-01 15:26:00 / 修改时间：16:02:26" itemprop="dateCreated datePublished" datetime="2021-08-01T15:26:00+08:00">2021-08-01</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/01/counterfeit-object-oriented-programming-on-the-difficulty-of-preventing-code-reuse-attacks-in-c-applications/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/01/counterfeit-object-oriented-programming-on-the-difficulty-of-preventing-code-reuse-attacks-in-c-applications/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="阅读记录"><a href="#阅读记录" class="headerlink" title="阅读记录"></a>阅读记录</h1><blockquote>
-<p>文章速览:COOP</p>
-</blockquote>
-<p>绕过CFI执行函数的方法：</p>
-<img src="/2021/08/01/counterfeit-object-oriented-programming-on-the-difficulty-of-preventing-code-reuse-attacks-in-c-applications/%E7%BB%95%E8%BF%87CFI%E6%89%A7%E8%A1%8C%E5%87%BD%E6%95%B0%E7%9A%84%E6%96%B9%E6%B3%95.png" class="">
-<h1 id="Cite"><a href="#Cite" class="headerlink" title="Cite"></a>Cite</h1><p>@inproceedings{schuster2015counterfeit,<br>  title={Counterfeit object-oriented programming: On the difficulty of preventing code reuse attacks in C++ applications},<br>  author={Schuster, Felix and Tendyck, Thomas and Liebchen, Christopher and Davi, Lucas and Sadeghi, Ahmad-Reza and Holz, Thorsten},<br>  booktitle={2015 IEEE Symposium on Security and Privacy},<br>  pages={745--762},<br>  year={2015},<br>  organization={IEEE}<br>}</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1532,7 +1728,7 @@ chkconfig [service] on/off<span aria-hidden="true" class="line-numbers-rows"><sp
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-count">42</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1545,7 +1741,7 @@ chkconfig [service] on/off<span aria-hidden="true" class="line-numbers-rows"><sp
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-count">26</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
