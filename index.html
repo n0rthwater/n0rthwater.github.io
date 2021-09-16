@@ -196,6 +196,159 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/16/run-linux-on-riscv/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/09/16/run-linux-on-riscv/" class="post-title-link" itemprop="url">Run linux on riscv</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-09-16 09:59:47 / 修改时间：16:30:25" itemprop="dateCreated datePublished" datetime="2021-09-16T09:59:47+08:00">2021-09-16</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/09/16/run-linux-on-riscv/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/09/16/run-linux-on-riscv/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="编译环境"><a href="#编译环境" class="headerlink" title="编译环境"></a>编译环境</h1><p>ubuntu 20.04</p>
+<h1 id="编译riscv-gun-toolchain"><a href="#编译riscv-gun-toolchain" class="headerlink" title="编译riscv-gun-toolchain"></a>编译riscv-gun-toolchain</h1><p>Riscv的GNU交叉编译工具链</p>
+<h2 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h2><p>国内github下载太慢<br>我选择用码云下载</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">git</span> clone  https://gitee.com/mirrors/riscv-gnu-toolchain
+<span class="token builtin class-name">cd</span> riscv-gnu-toolchain
+<span class="token comment">#把之前的空文件夹删了</span>
+<span class="token function">rm</span> -rf riscv-*
+<span class="token comment">#再分别拉取分支</span>
+<span class="token function">git</span> clone -b upstream git@gitee.com:mirrors/riscv-newlib.git
+<span class="token function">git</span> clone -b riscv-glibc-2.29 git@gitee.com:mirrors/riscv-glibc.git
+<span class="token function">git</span> clone -b riscv-gcc-9.2.0-rvv git@gitee.com:mirrors/riscv-gcc.git
+<span class="token function">git</span> clone git@gitee.com:mirrors/riscv-dejagnu.git
+
+<span class="token comment">#riscv-binutils与riscv-gdb为同一个仓库的不同分支</span>
+<span class="token function">git</span> clone -b rvv-0.8.x git@gitee.com:mirrors/riscv-binutils-gdb.git riscv-binutils
+<span class="token function">git</span> clone -b fsf-gdb-8.3-with-sim git@gitee.com:mirrors/riscv-binutils-gdb.git riscv-gdb<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>交叉编译工具链主要有两个版本：</p>
+<ul>
+<li>riscv64-­unknown-­elf-gcc，使用newlib，主要用于编译静态程序或者单机嵌入式程序。</li>
+<li>riscv64-unknown-­linux-­gnu-­gcc，使用glibc，可以编译动态链接程序，如大型操作系统如linux kernel等。</li>
+</ul>
+<h2 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h2><p>选择编译riscv-unknown-linux-gcc<br>编译前准备</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">apt-get</span> <span class="token function">install</span> autoconf automake autotools-dev <span class="token function">curl</span> python3 libmpc-dev libmpfr-dev libgmp-dev <span class="token function">gawk</span> build-essential bison flex texinfo gperf libtool patchutils <span class="token function">bc</span> zlib1g-dev libexpat-dev<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>编译</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">export</span> <span class="token assign-left variable">RISCV</span><span class="token operator">=</span>/opt/riscv
+./configure --prefix<span class="token operator">=</span><span class="token variable">$RISCV</span>
+<span class="token function">make</span> linux -j <span class="token variable">${nproc}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>修改环境变量  </p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">export</span> <span class="token assign-left variable"><span class="token environment constant">PATH</span></span><span class="token operator">=</span><span class="token string">"<span class="token environment constant">$PATH</span>:<span class="token variable">$RISCV</span>/bin"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h1 id="编译qemu"><a href="#编译qemu" class="headerlink" title="编译qemu"></a>编译qemu</h1><p>下载</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">git</span> clone https://github.com/qemu/qemu<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>编译</p>
+<pre class="line-numbers language-none"><code class="language-none">cd qemu
+git checkout v5.0.0
+./configure --target-list=riscv64-softmmu
+make -j $(nproc)
+sudo make install<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="编译linux-kernel"><a href="#编译linux-kernel" class="headerlink" title="编译linux kernel"></a>编译linux kernel</h1><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">git</span> clone https://github.com/torvalds/linux.git
+<span class="token builtin class-name">cd</span> linux
+<span class="token function">git</span> checkout v5.11
+<span class="token function">make</span> <span class="token assign-left variable">ARCH</span><span class="token operator">=</span>riscv <span class="token assign-left variable">CROSS_COMPILE</span><span class="token operator">=</span>riscv64-unknown-linux-gnu- defconfig
+<span class="token function">make</span> <span class="token assign-left variable">ARCH</span><span class="token operator">=</span>riscv <span class="token assign-left variable">CROSS_COMPILE</span><span class="token operator">=</span>riscv64-unknown-linux-gnu- -j <span class="token variable"><span class="token variable">$(</span>nproc<span class="token variable">)</span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>编译完成后，最后生成的Kernel文件在linux/arch/riscv/boot/Image</p>
+<h1 id="编译busybox"><a href="#编译busybox" class="headerlink" title="编译busybox"></a>编译busybox</h1><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">git</span> clone https://git.busybox.net/busybox
+<span class="token builtin class-name">cd</span> busybox
+<span class="token comment"># 选择Build static binary</span>
+<span class="token comment"># 编译选项中需要添加  --sysroot=$RISCV/sysroot</span>
+<span class="token comment"># 否则会出现缺失头文件的错误</span>
+<span class="token assign-left variable">CROSS_COMPILE</span><span class="token operator">=</span>riscv64-unknown-linux-gnu- <span class="token function">make</span> menuconfig
+<span class="token assign-left variable">CROSS_COMPILE</span><span class="token operator">=</span>riscv64-unknown-linux-gnu- <span class="token function">make</span> -j <span class="token variable"><span class="token variable">$(</span>nproc<span class="token variable">)</span></span>
+<span class="token assign-left variable">CROSS_COMPILE</span><span class="token operator">=</span>riscv64-unknown-linux-gnu- <span class="token function">make</span> <span class="token function">install</span>
+<span class="token builtin class-name">cd</span> _install
+<span class="token function">mkdir</span> -pv <span class="token punctuation">{</span>bin,sbin,etc,proc,sys,usr/<span class="token punctuation">{</span>bin,sbin<span class="token punctuation">}</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="制作根文件系统"><a href="#制作根文件系统" class="headerlink" title="制作根文件系统"></a>制作根文件系统</h1><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">mkdir</span> rootfs
+qemu-img create rootfs.img
+<span class="token function">sudo</span> <span class="token function">mount</span> -o loop rootfs.img rootfs
+sudno <span class="token function">cp</span> -r busybox/_install ./rootfs/
+<span class="token function">sudo</span> <span class="token function">umount</span> rootfs <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="启动基本linux程序"><a href="#启动基本linux程序" class="headerlink" title="启动基本linux程序"></a>启动基本linux程序</h1><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">qemu-system-riscv64 -M virt -m 256M -nographic -kernel ./linux/arch/riscv/boot/Image -drive <span class="token assign-left variable">file</span><span class="token operator">=</span>rootfs.img,format<span class="token operator">=</span>raw,id<span class="token operator">=</span>hd0 -device virtio-blk-device,drive<span class="token operator">=</span>hd0 -append <span class="token string">"root=/dev/vda rw console=ttyS0"</span> -bios default<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h1 id="运行ubuntu"><a href="#运行ubuntu" class="headerlink" title="运行ubuntu"></a>运行ubuntu</h1><p>工具准备</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">apt</span> <span class="token function">install</span> qemu-system-misc opensbi u-boot-qemu qemu-utils<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>下载镜像</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">wget</span> https://old-releases.ubuntu.com/releases/focal/ubuntu-20.04.2-preinstalled-server-riscv64.img.xz
+
+xz -dk ubuntu-20.04.2-preinstalled-server-riscv64.img.xz<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>启动qemu-ubuntu</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">sudo</span> qemu-system-riscv64 -machine virt -nographic -m <span class="token number">2048</span> -smp <span class="token number">4</span> -bios /usr/lib/riscv64-linux-gnu/opensbi/generic/fw_jump.elf -kernel /usr/lib/u-boot/qemu-riscv64_smode/uboot.elf -device virtio-net-device,netdev<span class="token operator">=</span>eth0 -netdev user,id<span class="token operator">=</span>eth0 -drive <span class="token assign-left variable">file</span><span class="token operator">=</span>ubuntu-20.04.2-preinstalled-server-riscv64.img,format<span class="token operator">=</span>raw,if<span class="token operator">=</span>virtio<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>用户名/密码：ubuntu/ubuntu</p>
+<p>qemu命令选项解释：<br>-bios：设置bios程序<br>-kernel：设置操作系统内核<br>-drive file=<filename>：指定根文件系统<br>netdev=eth0：表示使用本机的eth0网卡    </filename></p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1825739">https://cloud.tencent.com/developer/article/1825739</a></li>
+<li><a target="_blank" rel="noopener" href="https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-qemu.html">https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-qemu.html</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/07/c-cheng-xu-ni-xiang/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1548,117 +1701,6 @@ chkconfig [service] on/off<span aria-hidden="true" class="line-numbers-rows"><sp
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/08/07/fine-grained-control-flow-integrity-for-kernel-software/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="n0rthwater">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="n0rthwater">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/07/fine-grained-control-flow-integrity-for-kernel-software/" class="post-title-link" itemprop="url">Fine-grained control-flow integrity for kernel software</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-08-07 14:40:02 / 修改时间：16:54:43" itemprop="dateCreated datePublished" datetime="2021-08-07T14:40:02+08:00">2021-08-07</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/07/fine-grained-control-flow-integrity-for-kernel-software/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/07/fine-grained-control-flow-integrity-for-kernel-software/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="1-阅读记录"><a href="#1-阅读记录" class="headerlink" title="1. 阅读记录"></a>1. 阅读记录</h1><p>本文主要是针对内核提出了一种细粒度的CFI。</p>
-<h2 id="1-1-Compute-CFG"><a href="#1-1-Compute-CFG" class="headerlink" title="1.1. Compute CFG"></a>1.1. Compute CFG</h2><h3 id="1-1-1-Compute-Indirect-Call-Targets"><a href="#1-1-1-Compute-Indirect-Call-Targets" class="headerlink" title="1.1.1. Compute Indirect Call Targets"></a>1.1.1. Compute Indirect Call Targets</h3><p>在计算indirect call targets方面，本文主要使用的是静态污点分析的方法。本文对函数指针的使用做了两个假设(对于两个假设的合理性，本文进行了补充说明)：</p>
-<ul>
-<li>函数指针的唯一运算操作是赋值<ul>
-<li>原文：We believe arbitrary computations on function pointers are unlikely due to considerations such as readability, maintainability, and portability<br>即本文认为考虑到程序的可读性、可维护性、可移植性等要素，不应该对函数指针做复杂的运算操作</li>
-</ul>
-</li>
-<li>不会有数据指针指向函数指针</li>
-</ul>
-<p>关于污点分析的实现，本文选择污染所有被函数f的函数指针，然后对其进行传播，最后的结果形式为f-&gt;set(fptr)</p>
-<p>另外，本文对type analysis做出了评价，认为其既会导致误报也会导致漏报：</p>
-<ul>
-<li>误报：无关的目标拥有和函数指针相同的签名</li>
-<li>漏报：签名不同的函数被强行赋值给了某函数指针</li>
-</ul>
-<h3 id="1-1-2-Compute-Return-Targets"><a href="#1-1-2-Compute-Return-Targets" class="headerlink" title="1.1.2. Compute Return Targets"></a>1.1.2. Compute Return Targets</h3><p>结果形式：call sites→set(return instructions)</p>
-<p>主要难点：汇编代码</p>
-<p>算法思路：递归</p>
-<h2 id="1-2-Enforce-CFI"><a href="#1-2-Enforce-CFI" class="headerlink" title="1.2. Enforce CFI"></a>1.2. Enforce CFI</h2><h3 id="1-2-1-Enforcement-Policy"><a href="#1-2-1-Enforcement-Policy" class="headerlink" title="1.2.1. Enforcement Policy"></a>1.2.1. Enforcement Policy</h3><img src="/2021/08/07/fine-grained-control-flow-integrity-for-kernel-software/CFI%E5%8A%A0%E5%9B%BA%E7%AD%96%E7%95%A5.jpg" class="">
-
-<p>关于s4的解释，主要是防止在内核返回用户态的时候被修改返回地址，劫持控制流。因为在状态切换的时候，代码的执行范围已经超出了内核的CFG，CFI将不会再对其进行检查。</p>
-<h3 id="1-2-2-Performance-Overhead"><a href="#1-2-2-Performance-Overhead" class="headerlink" title="1.2.2. Performance Overhead"></a>1.2.2. Performance Overhead</h3><p>在提高CFI效率方面，本文主要使用了两种方法：</p>
-<ul>
-<li>复用程序中已有的check instruction</li>
-<li>将indirect call转化成direct call<ul>
-<li>本文认为，某些非直接调用只是为了表现代码的灵活性，实际上它的调用目标只有1个，可以使用静态分析的方法找出这唯一的调用目标，从而将indirect call转变成direct call，以减小CFI的开销。<br>原文:in many cases kernel software only uses one target for indirect control transfers</li>
-</ul>
-</li>
-</ul>
-<h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1><p>@inproceedings{ge2016fine,<br>  title={Fine-grained control-flow integrity for kernel software},<br>  author={Ge, Xinyang and Talele, Nirupama and Payer, Mathias and Jaeger, Trent},<br>  booktitle={2016 IEEE European Symposium on Security and Privacy (EuroS&amp;P)},<br>  pages={179--194},<br>  year={2016},<br>  organization={IEEE}<br>}</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1728,7 +1770,7 @@ chkconfig [service] on/off<span aria-hidden="true" class="line-numbers-rows"><sp
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-count">43</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

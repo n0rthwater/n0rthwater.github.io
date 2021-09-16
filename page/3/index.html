@@ -196,6 +196,187 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/19/yi-dong-duan-an-quan-gai-yao/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="n0rthwater">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="n0rthwater">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/07/19/yi-dong-duan-an-quan-gai-yao/" class="post-title-link" itemprop="url">移动端安全概要</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-19 15:10:48" itemprop="dateCreated datePublished" datetime="2021-07-19T15:10:48+08:00">2021-07-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-07-21 20:48:39" itemprop="dateModified" datetime="2021-07-21T20:48:39+08:00">2021-07-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%A7%BB%E5%8A%A8%E7%AB%AF/" itemprop="url" rel="index"><span itemprop="name">移动端</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/07/19/yi-dong-duan-an-quan-gai-yao/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/07/19/yi-dong-duan-an-quan-gai-yao/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="发展态势"><a href="#发展态势" class="headerlink" title="发展态势"></a>发展态势</h1><ol>
+<li>新发布App数量多，增幅大</li>
+</ol>
+<h2 id="安全挑战"><a href="#安全挑战" class="headerlink" title="安全挑战"></a>安全挑战</h2><ol>
+<li>二维码藏毒：将病毒链接成二维码发布</li>
+<li>APP二次打包被植入木马</li>
+<li>APP盗版</li>
+<li>通信劫持</li>
+</ol>
+<h1 id="Android安全"><a href="#Android安全" class="headerlink" title="Android安全"></a>Android安全</h1><h2 id="Android系统机制"><a href="#Android系统机制" class="headerlink" title="Android系统机制"></a>Android系统机制</h2><h3 id="可执行文件"><a href="#可执行文件" class="headerlink" title="可执行文件"></a>可执行文件</h3><ul>
+<li>dex与odex<br>  odex其实就是编译后的dex</li>
+</ul>
+<h3 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h3><p>权限级别：</p>
+<ol>
+<li>normal：应用申请这个级别的权限时，系统会比较大方的授予</li>
+<li>dangerous：系统在授予该级别权限之前会询问用户</li>
+<li>signature：如果A应用定义了1个权限P，当B应用申请权限P的时候，仅当A和B两个应用拥有相同的证书签名，系统才会授予B应用该权限。该情况下，通常A、B两个应用是由同一个开发者开发的或者是同一个公司的产品。</li>
+<li>signatureOrSystem：只有APP存在于Android系统的镜像里或者使用相同证书签名的应用，才会被授予该级别权限。少见，通常用于Android系统内置应用。<h3 id="组件"><a href="#组件" class="headerlink" title="组件"></a>组件</h3></li>
+</ol>
+<h3 id="WebView"><a href="#WebView" class="headerlink" title="WebView"></a>WebView</h3><p>WebView objects allow you to display web content as part of your activity layout, but lack some of the features of fully-developed browsers. </p>
+<h4 id="Android与JS交互"><a href="#Android与JS交互" class="headerlink" title="Android与JS交互"></a>Android与JS交互</h4><p>我们可以在网页中随意调用本地的Java代码<br>步骤(资源中有对应的html文件)：</p>
+<ol>
+<li>注册html</li>
+<li>调用对应接口</li>
+</ol>
+<h4 id="WebView远程代码执行漏洞"><a href="#WebView远程代码执行漏洞" class="headerlink" title="WebView远程代码执行漏洞"></a>WebView远程代码执行漏洞</h4><blockquote>
+<p>触发条件： API &lt;= 16      </p>
+</blockquote>
+<blockquote>
+<p>漏洞成因：没有正确限制WebView.addJavascriptInterface方法的使用，远程攻击者可通过使用Java Reflection API利用该漏洞执行任意Java对象的方法   </p>
+</blockquote>
+<blockquote>
+<p>简要描述：通过addJavascriptInterface给WebView加入一个JavaScript桥接接口，JavaScript通过调用这个接口可以直接操作本地的JAVA接口。</p>
+</blockquote>
+<blockquote>
+<p>参考文献：</p>
+<ol>
+<li>Attacks on WebView in the Android System    </li>
+<li>POC:<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1743487">https://cloud.tencent.com/developer/article/1743487</a></li>
+</ol>
+</blockquote>
+<h2 id="漏洞分类"><a href="#漏洞分类" class="headerlink" title="漏洞分类"></a>漏洞分类</h2><ol>
+<li>网络中间人攻击：通信过程中给出现非法第三方</li>
+<li>组件劫持攻击：例如页面劫持，页面跳转至不可信第三方</li>
+<li>组件能力滥用：android系统组件在指定Intent以后默认情况下是可以被外部程序访问的，可以被外部访问意味着可能被其它程序用来串谋攻击。<ol>
+<li>Activity</li>
+<li>BroadCast——发送安全与接收安全、有序广播与无序广播<br> 有序广播可被优先级高的应用篡改或终止</li>
+<li>Service<br> 直接stopService影响程序正常使用</li>
+<li>Content Provider<br>程序间数据共享，如无保护会导致无授权获取敏感信息</li>
+</ol>
+</li>
+<li>调试敏感信息泄露<br> LogCat敏感信息泄露，不仅输出系统日志信息，也会输出应用日志信息</li>
+<li>服务端注入攻击(对服务器中的数据库进行注入)</li>
+<li>客户端注入攻击(对本地的数据库进行注入)<br> 成因：使用SQLite进行数据存储<br> 例子：<ol>
+<li>WebView注入；</li>
+<li>通过原始SQL语句对SQLite数据库进行传统的SQL注入；</li>
+<li><a target="_blank" rel="noopener" href="http://www.cxyzjd.com/article/u013107656/53337422">内容提供程序SQL注入</a>；</li>
+<li>内容提供程序路径遍历。</li>
+</ol>
+</li>
+<li>网络传输信息泄露</li>
+<li>外部存储信息泄露   <ul>
+<li>sdcard</li>
+</ul>
+</li>
+<li>内部存储信息泄露<ul>
+<li>app/</li>
+<li>data/</li>
+</ul>
+</li>
+</ol>
+<h2 id="APP安全渗透测试"><a href="#APP安全渗透测试" class="headerlink" title="APP安全渗透测试"></a>APP安全渗透测试</h2><p>应用分类：</p>
+<ol>
+<li>web应用</li>
+<li>原生应用——响应速度快、不支持跨平台</li>
+<li>混合应用</li>
+</ol>
+<h2 id="安全加固"><a href="#安全加固" class="headerlink" title="安全加固"></a>安全加固</h2><h3 id="防篡改"><a href="#防篡改" class="headerlink" title="防篡改"></a>防篡改</h3><ul>
+<li>防二次打包</li>
+</ul>
+<h3 id="反调试"><a href="#反调试" class="headerlink" title="反调试"></a>反调试</h3><ul>
+<li>多进程保护</li>
+<li>防内存dump<ol>
+<li>inotify防内存dump——监控/proc/pid/mem</li>
+</ol>
+</li>
+</ul>
+<h2 id="APP加壳"><a href="#APP加壳" class="headerlink" title="APP加壳"></a>APP加壳</h2><ul>
+<li>每一代加固技术对应的对抗手段有哪些？</li>
+<li>代码抽取保护</li>
+</ul>
+<h1 id="安全手机系统"><a href="#安全手机系统" class="headerlink" title="安全手机系统"></a>安全手机系统</h1><h2 id="加密电话"><a href="#加密电话" class="headerlink" title="加密电话"></a>加密电话</h2><ul>
+<li>加密VoIP电话：将语音转化为IP数据包</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/19/iot-an-quan/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1077,209 +1258,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="n0rthwater">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="n0rthwater">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/" class="post-title-link" itemprop="url">All You Ever Wanted to Know about Dynamic Taint Analysis and Forward Symbolic Execution</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-07-13 23:38:56" itemprop="dateCreated datePublished" datetime="2021-07-13T23:38:56+08:00">2021-07-13</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-07-14 16:28:01" itemprop="dateModified" datetime="2021-07-14T16:28:01+08:00">2021-07-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="1-阅读笔记"><a href="#1-阅读笔记" class="headerlink" title="1. 阅读笔记"></a>1. 阅读笔记</h1><blockquote>
-<p>文章速览：  </p>
-<ol>
-<li>构建了一种新的中间语言 </li>
-<li>动态污点分析</li>
-<li>符号执行</li>
-</ol>
-</blockquote>
-<blockquote>
-<p>重要观点：</p>
-<ul>
-<li>动态分析的优点<ol>
-<li>结果准确</li>
-<li>简单,只需考虑一次执行过程中发生的事情</li>
-</ol>
-</li>
-<li>动态污点分析+符号执行的应用<ol>
-<li>未知漏洞挖掘</li>
-<li>自动化过滤输入</li>
-<li>测试用例生成</li>
-<li>恶意代码分析</li>
-</ol>
-</li>
-</ul>
-</blockquote>
-<h2 id="1-1-动态污点分析"><a href="#1-1-动态污点分析" class="headerlink" title="1.1. 动态污点分析"></a>1.1. 动态污点分析</h2><blockquote>
-<p>动态追踪source和sink</p>
-</blockquote>
-<ul>
-<li>两个挑战:overtainted和undertainting</li>
-<li>内容速览<ol>
-<li>如何执行动态符号执行?<ul>
-<li>根据操作语义的规则</li>
-</ul>
-</li>
-<li>污点策略<ul>
-<li>introduction</li>
-<li>transport</li>
-<li>check</li>
-</ul>
-</li>
-<li>注意事项:哪些容易产生overtainted或undertainting?<ul>
-<li>decide when to remove a taint is more difficult than when to introduce a taint</li>
-<li>undertainting ?</li>
-</ul>
-</li>
-</ol>
-</li>
-<li>重要观点: 不同目标应用的污点策略不同,但是大同小异</li>
-</ul>
-<h2 id="1-2-符号执行"><a href="#1-2-符号执行" class="headerlink" title="1.2. 符号执行"></a>1.2. 符号执行</h2><blockquote>
-<p>一个公式对应一条路径</p>
-</blockquote>
-<ul>
-<li>三个难题<ol>
-<li>Symbolic Memory<ul>
-<li>解决方案<ol>
-<li>unsound assumptions<br> 将如下代码: <pre class="line-numbers language-none"><code class="language-none">store(addr1, v)
-z = load(addr2)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
- 作如下假设: <pre class="line-numbers language-none"><code class="language-none">mem_addr1 = v
-z = mem_addr2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
- 即忽略addr1与addr2是否为别名</li>
-<li>Let subsequent analysis steps deal with them.(滞后处理,比如之后再使用SMT判断二者是否存在别名关系)</li>
-<li>别名分析</li>
-</ol>
-</li>
-</ul>
-</li>
-<li>System calls<ul>
-<li>解决方案:副作用建模(规则?比如说使用上一次的执行结果)</li>
-</ul>
-</li>
-<li>Path Selection<br> 将路径看成树,主要是要防止循环的出现(设置执行上限)<ul>
-<li>解决方案<ol>
-<li>DFS</li>
-<li>实际执行</li>
-<li>随机路径</li>
-<li>启发式 ?</li>
-</ol>
-</li>
-</ul>
-</li>
-</ol>
-</li>
-<li>其它<ul>
-<li>符号跳转(跳转表)<ul>
-<li>解决方案<ol>
-<li>实际执行</li>
-<li>SMT</li>
-<li>Static Analysis(作者认为效果最优)</li>
-</ol>
-</li>
-</ul>
-</li>
-<li>分析效果:三个指数     <img src="/2021/07/13/all-you-ever-wanted-to-know-about-dynamic-taint-analysis-and-forward-symbolic-execution/%E4%B8%89%E4%B8%AA%E6%8C%87%E6%95%B0.png" class="" title="样例代码">  
-<ol>
-<li>执行时间是程序分支数目的指数级</li>
-<li>指数数量的formula</li>
-<li>指数规模的formula size:例如x→s+s+s+s....+s</li>
-</ol>
-<ul>
-<li>解决方案:<ol>
-<li>硬件加速</li>
-<li>简化约束</li>
-<li>调整符号名→unique</li>
-<li>分步求解</li>
-<li>weak precondition?</li>
-</ol>
-</li>
-</ul>
-</li>
-<li>Mixed Execution:对于某些可信输入,不符号化</li>
-</ul>
-</li>
-</ul>
-<h1 id="2-Cite"><a href="#2-Cite" class="headerlink" title="2. Cite"></a>2. Cite</h1><p>@inproceedings{schwartz2010all,<br>  title={All you ever wanted to know about dynamic taint analysis and forward symbolic execution (but might have been afraid to ask)},<br>  author={Schwartz, Edward J and Avgerinos, Thanassis and Brumley, David},<br>  booktitle={2010 IEEE symposium on Security and privacy},<br>  pages={317--331},<br>  year={2010},<br>  organization={IEEE}<br>}</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1349,7 +1327,7 @@ z = mem_addr2<span aria-hidden="true" class="line-numbers-rows"><span></span><sp
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-count">43</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
