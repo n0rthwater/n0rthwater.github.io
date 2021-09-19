@@ -219,8 +219,18 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
+              
 
-              <time title="创建时间：2021-09-19 20:58:16" itemprop="dateCreated datePublished" datetime="2021-09-19T20:58:16+08:00">2021-09-19</time>
+              <time title="创建时间：2021-09-19 20:58:16 / 修改时间：21:20:09" itemprop="dateCreated datePublished" datetime="2021-09-19T20:58:16+08:00">2021-09-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
             </span>
 
           
@@ -248,7 +258,35 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          
+          <h1 id="Re"><a href="#Re" class="headerlink" title="Re"></a>Re</h1><h2 id="Just-cmp-Re"><a href="#Just-cmp-Re" class="headerlink" title="Just_cmp_Re"></a>Just_cmp_Re</h2><p>main函数</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">__int64 __fastcall main(int a1, char **a2, char **a3)
+{
+  __int64 result; // rax
+
+  if ( a3 &gt; 1 )
+  {
+    if ( !strcmp(a1[1], "flag{********************************}") )
+      puts("Correct!");
+    else
+      puts("Wrong!");
+  }
+  else
+  {
+    printf("Usage: %s &lt;FLAG&gt;\n", *a1);
+  }
+  return 0LL;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>没什么好说的，strcmp函数，比对字符串，设置参数为flag{********************************}，直接运行，输出Correct，即在运行过程中代码不会被改变</p>
+<p>脑洞了，静态看一下init，没什么线索。发现函数0x800中引入了0x1060处的数组，并做了减法。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># IDA脚本</span>
+addr <span class="token operator">=</span> <span class="token number">0x1060</span>
+plain_text <span class="token operator">=</span> <span class="token string">"flag{********************************}"</span>
+<span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">38</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token builtin">chr</span><span class="token punctuation">(</span><span class="token builtin">ord</span><span class="token punctuation">(</span>plain_text<span class="token punctuation">)</span><span class="token operator">+</span>Byte<span class="token punctuation">(</span>addr<span class="token operator">+</span>i<span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token punctuation">)</span><span class="token punctuation">,</span>end<span class="token operator">=</span><span class="token string">""</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="Funny-js"><a href="#Funny-js" class="headerlink" title="Funny_js"></a>Funny_js</h2><p>直接参考<a target="_blank" rel="noopener" href="https://l0x1c.github.io/2020/04/30/2020-4-30/#%E7%9C%8B%E9%9B%AACTF%E2%80%94%E2%80%94%E5%AF%BB%E8%B8%AA%E8%A7%85%E6%BA%90">https://l0x1c.github.io/2020/04/30/2020-4-30/#看雪CTF——寻踪觅源</a><br>加密算法是RC4(flag, key) ^ 0x23 == fix_arr<br>fix_arr = [150,224,244,68,61,125,8,239,203,254,241,113,213,176,64,106,103,166,185,159,158,172,9,213,239,12,100,185,90,174,107,131,223,122,229,157]</p>
+<p>key = "2021quickjs_happygame"</p>
+
       
     </div>
 
@@ -1805,7 +1843,7 @@ python -m SimpleHTTPServer 6666<span aria-hidden="true" class="line-numbers-rows
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">26</span>
+        <span class="site-state-item-count">27</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
