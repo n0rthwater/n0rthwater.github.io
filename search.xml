@@ -2450,7 +2450,51 @@ call    rdx<span aria-hidden="true" class="line-numbers-rows"><span></span><span
 .data.rel.ro:0000000000003D78                 dq offset _ZTI6Parent   ; `typeinfo for'Parent
 .data.rel.ro:0000000000003D80 off_3D80        dq offset _ZN6Parent3actEv
 .data.rel.ro:0000000000003D80                                         ; DATA XREF: Parent::Parent(void)+18↑o
-.data.rel.ro:0000000000003D80                                         ; Parent::act(void)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>]]></content>
+.data.rel.ro:0000000000003D80                                         ; Parent::act(void)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="静态成员变量"><a href="#静态成员变量" class="headerlink" title="静态成员变量"></a>静态成员变量</h2><pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;iostream&gt;
+
+using namespace std;
+
+class Test {
+public:
+	static void foo() {
+		cout &lt;&lt; "Static member function foo called.\n";
+	}
+
+    void foo1() {
+        cout &lt;&lt; "Non-static member function foo1 called.\n";
+    }
+};
+
+int main() {
+	Test* test = new Test();
+	Test::foo();
+	test-&gt;foo1();
+	return 0;
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-none"><code class="language-none">g++ test.cpp -o test
+objdump -d test
+
+0000000000001165 &lt;main&gt;:
+    1165:	55                   	push   %rbp
+    1166:	48 89 e5             	mov    %rsp,%rbp
+    1169:	48 83 ec 10          	sub    $0x10,%rsp
+    116d:	bf 01 00 00 00       	mov    $0x1,%edi
+    1172:	e8 d9 fe ff ff       	callq  1050 &lt;_Znwm@plt&gt;
+    1177:	48 89 45 f8          	mov    %rax,-0x8(%rbp)
+    117b:	e8 71 00 00 00       	callq  11f1 &lt;_ZN4Test3fooEv&gt;            # 静态成员方法，不将this指针入参到rdi寄存器中
+                                                                            # 所以静态成员方法中，不能访问对象的属性
+    1180:	48 8b 45 f8          	mov    -0x8(%rbp),%rax
+    1184:	48 89 c7             	mov    %rax,%rdi                        # 非静态成员方法，将this指针入参
+    1187:	e8 80 00 00 00       	callq  120c &lt;_ZN4Test4foo1Ev&gt;
+    118c:	b8 00 00 00 00       	mov    $0x0,%eax
+    1191:	c9                   	leaveq 
+    1192:	c3                   	retq   <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>静态成员方法的代码也在text段</p>
+]]></content>
       <categories>
         <category>逆向工程</category>
       </categories>
@@ -2597,5 +2641,18 @@ vol.py -f ./Target.vmem --profile<span class="token operator">=</span>Win7SP1x64
       <categories>
         <category>取证</category>
       </categories>
+  </entry>
+  <entry>
+    <title>Android反破解技术</title>
+    <url>/2021/09/16/android-fan-po-jie-ji-zhu/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>逆向工程</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>长城杯Writeup</title>
+    <url>/2021/09/19/chang-cheng-bei-writeup/</url>
+    <content><![CDATA[]]></content>
   </entry>
 </search>
